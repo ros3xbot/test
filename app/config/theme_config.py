@@ -257,7 +257,7 @@ def get_theme(force_reload=False):
         _cached_theme_name = theme_name
 
     return _cached_theme
-theme_sets = "XLPOIN"
+theme_sets = "point"
 def get_theme_name():
     global _cached_theme_name
     return _cached_theme_name or get_active_theme_name()
