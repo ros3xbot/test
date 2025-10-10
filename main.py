@@ -180,92 +180,91 @@ def main():
     while True:
         user_context = fetch_user_context()
 
-        if user_context:
-            show_main_menu(user_context, user_context["display_quota"], user_context["segments"])
-            theme = get_theme()
-            choice = console.input(f"[{theme['text_sub']}]Pilih menu:[/{theme['text_sub']}] ").strip().lower()
-
-            match choice:
-                case "1":
-                    selected_user_number = show_account_menu()
-                    if selected_user_number:
-                        AuthInstance.set_active_user(selected_user_number)
-                        cached_user_context = None
-                        last_fetch_time = 0
-                        clear_screen()
-                    else:
-                        print_panel("⚠️ Error", "Tidak ada akun yang dipilih.")
-                        pause()
-
-                case "2":
-                    fetch_my_packages()
-
-                case "3":
-                    show_transaction_history(user_context["api_key"], user_context["tokens"])
-
-                case "4":
-                    tokens = AuthInstance.get_active_tokens()
-                    if not tokens:
-                        print_panel("⚠️ Error", "Token tidak ditemukan. Silakan login terlebih dahulu.")
-                        pause()
-                    else:
-                        run_point_exchange(tokens)
-
-                case "5":
-                    show_hot_menu()
-
-                case "6":
-                    show_hot_menu2()
-
-                case "7":
-                    family_code = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
-                    if family_code != "99":
-                        get_packages_by_family(family_code)
-
-                case "8":
-                    show_family_menu()
-
-                #case "9":
-                    #show_circle_menu()
-
-                case "00":
-                    show_bookmark_menu()
-
-                case "77":
-                    show_donate_menu()
-
-                case "88":
-                    show_theme_menu()
-
-                case "99":
-                    print_panel("👋 Sampai Jumpa", "Aplikasi ditutup")
-
-                case "s":
-                    special_packages = user_context.get("segments", {}).get("special_packages", [])
-                    if special_packages:
-                        result = show_special_for_you_menu(user_context["tokens"], special_packages)
-                        if result == "MAIN":
-                            continue
-                        elif result == "BACK":
-                            continue
-                    else:
-                        print_panel("ℹ️ Info", "Tidak ada paket Special For You yang tersedia saat ini.")
-                        pause()
-                    sys.exit(0)
-
-                case _:
-                    print_panel("⚠️ Error", "Pilihan tidak valid.")
-                    pause()
-
-        else:
+        if not user_context:
             selected_user_number = show_account_menu()
             if selected_user_number:
                 AuthInstance.set_active_user(selected_user_number)
                 cached_user_context = None
                 last_fetch_time = 0
                 clear_screen()
+                continue
             else:
                 print_panel("⚠️ Error", "Tidak ada akun yang dipilih.")
+                pause()
+                continue
+
+        show_main_menu(user_context, user_context["display_quota"], user_context["segments"])
+        theme = get_theme()
+        choice = console.input(f"[{theme['text_sub']}]Pilih menu:[/{theme['text_sub']}] ").strip().lower()
+
+        match choice:
+            case "1":
+                selected_user_number = show_account_menu()
+                if selected_user_number:
+                    AuthInstance.set_active_user(selected_user_number)
+                    cached_user_context = None
+                    last_fetch_time = 0
+                    clear_screen()
+                else:
+                    print_panel("⚠️ Error", "Tidak ada akun yang dipilih.")
+                    pause()
+
+            case "2":
+                fetch_my_packages()
+
+            case "3":
+                show_transaction_history(user_context["api_key"], user_context["tokens"])
+
+            case "4":
+                tokens = AuthInstance.get_active_tokens()
+                if not tokens:
+                    print_panel("⚠️ Error", "Token tidak ditemukan. Silakan login terlebih dahulu.")
+                    pause()
+                else:
+                    run_point_exchange(tokens)
+
+            case "5":
+                show_hot_menu()
+
+            case "6":
+                show_hot_menu2()
+
+            case "7":
+                family_code = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
+                if family_code != "99":
+                    get_packages_by_family(family_code)
+
+            case "8":
+                show_family_menu()
+
+            # case "9":
+                # show_circle_menu()
+
+            case "00":
+                show_bookmark_menu()
+
+            case "77":
+                show_donate_menu()
+
+            case "88":
+                show_theme_menu()
+
+            case "99":
+                print_panel("👋 Sampai Jumpa", "Aplikasi ditutup")
+                sys.exit(0)
+
+            case "s":
+                special_packages = user_context.get("segments", {}).get("special_packages", [])
+                if special_packages:
+                    result = show_special_for_you_menu(user_context["tokens"], special_packages)
+                    if result in ("MAIN", "BACK"):
+                        continue
+                else:
+                    print_panel("ℹ️ Info", "Tidak ada paket Special For You yang tersedia saat ini.")
+                    pause()
+
+            case _:
+                print_panel("⚠️ Error", "Pilihan tidak valid.")
                 pause()
 
 if __name__ == "__main__":
