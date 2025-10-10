@@ -69,8 +69,8 @@ def show_account_menu():
     users = AuthInstance.refresh_tokens
     active_user = AuthInstance.get_active_user()
 
-    MAX_FREE_ACCOUNTS = 2
-    UNLOCK_CODE = "@barbex"
+    max_acc = 2
+    acc_code = "barbex"
     unlock_data = load_unlock_status()
     is_unlocked = unlock_data.get("is_unlocked", False)
 
@@ -82,10 +82,10 @@ def show_account_menu():
 
         # Tambah akun jika belum ada atau diminta
         if active_user is None or add_user:
-            if not is_unlocked and len(users) >= MAX_FREE_ACCOUNTS:
+            if not is_unlocked and len(users) >= max_acc:
                 print_panel("🚫 Batas akun tercapai", "Masukkan kode unlock untuk menambah akun.")
                 unlock_input = console.input("Kode Unlock: ").strip()
-                if unlock_input != UNLOCK_CODE:
+                if unlock_input != acc_code:
                     print_panel("⚠️ Gagal", "Kode unlock salah. Tidak bisa menambah akun.")
                     pause()
                     add_user = False
