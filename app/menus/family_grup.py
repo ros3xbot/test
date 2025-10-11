@@ -167,19 +167,19 @@ def show_family_menu(return_package_detail: bool = False):
                 try:
                     result = get_packages_by_family(selected["code"], return_package_detail=return_package_detail)
                     if return_package_detail:
-                        return result if result else (None, None)
+                        if isinstance(result, tuple):
+                            return result
+                        elif result == "MAIN":
+                            return "MAIN"
+                        else:
+                            return None, None
                     if result == "MAIN":
                         return None
                     elif result == "BACK":
                         continue
                     pause()
-
                 except Exception as e:
                     print_panel("❌ Error", f"Gagal menampilkan paket: {e}")
             else:
                 print_panel("❌ Error", "Nomor tidak valid.")
-            pause()
-
-        else:
-            print_panel("❌ Error", "Pilihan tidak valid.")
             pause()
