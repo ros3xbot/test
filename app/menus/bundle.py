@@ -1,5 +1,6 @@
 from app.service.auth import AuthInstance
-from app.service.bookmark import BookmarkInstance, FamilyBookmarkInstance
+from app.service.bookmark import BookmarkInstance
+from app.service.family_bookmark import FamilyBookmarkInstance
 from app.client.engsel import get_family
 from app.client.engsel2 import get_package_details
 from app.client.purchase import settlement_balance
