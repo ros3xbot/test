@@ -13,17 +13,15 @@ from rich.align import Align
 
 console = Console()
 
-def show_bookmark_menu():
+def show_bookmark_menu(return_package_detail: bool = False):
     api_key = AuthInstance.api_key
     tokens = AuthInstance.get_active_tokens()
     theme = get_theme()
 
-    in_bookmark_menu = True
-    while in_bookmark_menu:
+    while True:
         clear_screen()
-        #console.print(Panel("🔖 Bookmark Paket", title="📌 Bookmark", border_style=theme["border_info"], expand=True))
         console.print(Panel(
-            Align.center("📌Daftar Bookmark Paket", vertical="middle"),
+            Align.center("📌 Daftar Bookmark Paket", vertical="middle"),
             border_style=theme["border_info"],
             padding=(1, 2),
             expand=True
@@ -33,29 +31,31 @@ def show_bookmark_menu():
         if not bookmarks:
             print_panel("ℹ️ Info", "Tidak ada bookmark tersimpan.")
             pause()
-            return None
+            return (None, None) if return_package_detail else None
 
-        bookmark_table = Table(show_header=True, box=MINIMAL_DOUBLE_HEAD, expand=True)
-        bookmark_table.add_column("No", style=theme["text_key"], justify="right", width=4)
-        bookmark_table.add_column("Nama Paket", style=theme["text_body"])
+        table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
+        table.add_column("No", style=theme["text_key"], justify="right", width=4)
+        table.add_column("Nama Paket", style=theme["text_body"])
 
         for idx, bm in enumerate(bookmarks):
             label = f"{bm['family_name']} - {bm['variant_name']} - {bm['option_name']}"
-            bookmark_table.add_row(str(idx + 1), label)
+            table.add_row(str(idx + 1), label)
 
-        console.print(Panel(bookmark_table, border_style=theme["border_primary"], expand=True))
+        console.print(Panel(table, border_style=theme["border_primary"], expand=True))
 
-        nav_table = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
-        nav_table.add_column(justify="right", style=theme["text_key"], width=6)
-        nav_table.add_column(justify="left", style=theme["text_body"])
-        nav_table.add_row("00", f"[{theme['text_sub']}]Kembali ke menu utama[/]")
-        nav_table.add_row("000", f"[{theme['text_err']}]Hapus Bookmark[/]")
+        nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+        nav.add_column(justify="right", style=theme["text_key"], width=6)
+        nav.add_column(justify="left", style=theme["text_body"])
+        nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu utama[/]")
+        nav.add_row("000", f"[{theme['text_err']}]Hapus Bookmark[/]")
 
-        console.print(Panel(nav_table, border_style=theme["border_info"], expand=True))
+        console.print(Panel(nav, border_style=theme["border_info"], expand=True))
 
         choice = console.input(f"[{theme['text_sub']}]Pilih bookmark (nomor):[/{theme['text_sub']}] ").strip()
+
         if choice == "00":
-            return None
+            return (None, None) if return_package_detail else None
+
         elif choice == "000":
             del_choice = console.input("Masukkan nomor bookmark yang ingin dihapus: ").strip()
             if del_choice.isdigit() and 1 <= int(del_choice) <= len(bookmarks):
@@ -67,11 +67,11 @@ def show_bookmark_menu():
                     del_bm["order"],
                 )
                 print_panel("✅ Info", "Bookmark berhasil dihapus.")
-                pause()
             else:
                 print_panel("⚠️ Error", "Input tidak valid. Silakan coba lagi.")
-                pause()
+            pause()
             continue
+
         elif choice.isdigit() and 1 <= int(choice) <= len(bookmarks):
             selected_bm = bookmarks[int(choice) - 1]
             family_code = selected_bm["family_code"]
@@ -83,16 +83,39 @@ def show_bookmark_menu():
                 pause()
                 continue
 
+            variant_code = None
             option_code = None
             for variant in family_data["package_variants"]:
                 if variant["name"] == selected_bm["variant_name"]:
+                    variant_code = variant["package_variant_code"]
                     for option in variant["package_options"]:
                         if option["order"] == selected_bm["order"]:
                             option_code = option["package_option_code"]
                             break
 
-            if option_code:
+            if not option_code or not variant_code:
+                print_panel("⚠️ Error", "Paket tidak ditemukan.")
+                pause()
+                continue
+
+            if return_package_detail:
+                detail = get_package_details(
+                    api_key, tokens,
+                    family_code,
+                    variant_code,
+                    selected_bm["order"],
+                    is_enterprise
+                )
+                if detail:
+                    name = f"{selected_bm['family_name']} - {selected_bm['variant_name']} - {selected_bm['option_name']}"
+                    return detail, name
+                else:
+                    print_panel("⚠️ Error", "Gagal mengambil detail paket.")
+                    pause()
+                    return (None, None)
+            else:
                 show_package_details(api_key, tokens, option_code, is_enterprise)
+
         else:
             print_panel("⚠️ Error", "Input tidak valid. Silakan coba lagi.")
             pause()
