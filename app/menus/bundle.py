@@ -29,7 +29,6 @@ def show_bundle_menu():
 
     while True:
         clear_screen()
-        #console.print(Panel("🛒 Keranjang Paket Bundle", style=theme["border_info"], expand=True
         console.print(Panel(
             Align.center("🛒 Keranjang Paket Bundle", vertical="middle"),
             border_style=theme["border_info"],
@@ -50,7 +49,7 @@ def show_bundle_menu():
             console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
             console.print(f"[{theme['text_body']}]Total Harga: Rp {get_rupiah(total_price)}[/]")
         else:
-            print_panel("Keranjang masih kosong.")
+            print_panel("ℹ️ Info", "Keranjang masih kosong.")
 
         nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
         nav.add_column(justify="right", style=theme["text_key"], width=6)
