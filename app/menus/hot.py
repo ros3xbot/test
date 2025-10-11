@@ -310,7 +310,7 @@ def show_hot_menu2():
             clear_screen()
             info_text = Text()
             info_text.append(f"{selected_package['name']}\n", style="bold")
-            info_text.append(f"Harga: {get_rupiah(selected_package['price'])}\n", style=theme["text_money"])
+            info_text.append(f"Harga: Rp {get_rupiah(selected_package['price'])}\n", style=theme["text_money"])
             info_text.append("Detail:\n", style=theme["text_body"])
             for line in selected_package.get("detail", "").split("\n"):
                 cleaned = line.strip()
