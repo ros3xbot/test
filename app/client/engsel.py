@@ -1,8 +1,7 @@
-import os
 import json
 import uuid
 import requests
-
+from app.config.anu_config import BASE_API_URL, BASE_CIAM_URL, BASIC_AUTH, UA
 from datetime import datetime, timedelta, timezone
 from app.menus.util_helper import live_loading, print_panel
 from app.config.theme_config import get_theme
@@ -18,17 +17,10 @@ from app.client.encrypt import (
     ax_device_id
 )
 
-BASE_API_URL = os.getenv("BASE_API_URL")
-BASE_CIAM_URL = os.getenv("BASE_CIAM_URL")
-if not BASE_API_URL or not BASE_CIAM_URL:
-    raise ValueError("BASE_API_URL or BASE_CIAM_URL environment variable not set")
-
 GET_OTP_URL = BASE_CIAM_URL + "/realms/xl-ciam/auth/otp"
-BASIC_AUTH = os.getenv("BASIC_AUTH")
 AX_DEVICE_ID = ax_device_id()
 AX_FP = load_ax_fp()
 SUBMIT_OTP_URL = BASE_CIAM_URL + "/realms/xl-ciam/protocol/openid-connect/token"
-UA = os.getenv("UA")
 
 def validate_contact(contact: str) -> bool:
     if not contact.startswith("628") or len(contact) > 14:
