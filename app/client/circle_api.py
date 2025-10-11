@@ -3,13 +3,10 @@ import requests
 import uuid
 import json
 from datetime import datetime, timezone
-from app.client.encrypt import decrypt_xdata
 from app.config.theme_config import get_theme
-
-# Ambil dari .env
-BASE_API_URL = os.getenv("BASE_API_URL")
-API_KEY = os.getenv("API_KEY")
-UA = os.getenv("UA")
+from app.service.auth import AuthInstance
+from app.client.engsel import send_api_request, BASE_API_URL, API_KEY, UA, java_like_timestamp
+from app.client.encrypt import encryptsign_xdata, decrypt_xdata
 
 # ====================
 # Helper Signature & Timestamp
