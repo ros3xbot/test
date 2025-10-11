@@ -242,7 +242,7 @@ def main():
                 show_bookmark_menu()
 
             case "10":
-                show_bundle_menu()()
+                show_bundle_menu()
 
             case "77":
                 show_donate_menu()
