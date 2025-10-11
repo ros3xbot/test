@@ -1,6 +1,6 @@
 from app.service.auth import AuthInstance
-from app.service.bookmark import BookmarkInstance
-from app.client.engsel import get_family, get_package, get_package_details
+#from app.service.bookmark import BookmarkInstance
+#from app.client.engsel import get_family, get_package, get_package_details
 from app.client.balance import settlement_balance
 from app.client.qris import show_qris_payment
 from app.client.ewallet import show_multipayment
@@ -17,67 +17,6 @@ from rich.table import Table
 from rich.box import MINIMAL_DOUBLE_HEAD
 
 console = Console()
-
-
-def get_package_from_bookmark():
-    api_key = AuthInstance.api_key
-    tokens = AuthInstance.get_active_tokens()
-    theme = get_theme()
-
-    clear_screen()
-    console.print(Panel("📌 Tambah Paket dari Bookmark", style=theme["border_info"], expand=True))
-
-    bookmarks = BookmarkInstance.get_bookmarks()
-    if not bookmarks:
-        print_panel("ℹ️ Info", "Tidak ada bookmark tersimpan.")
-        pause()
-        return None, None
-
-    table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
-    table.add_column("No", justify="right", style=theme["text_key"], width=4)
-    table.add_column("Family", style=theme["text_body"])
-    table.add_column("Varian", style=theme["text_body"])
-    table.add_column("Paket", style=theme["text_body"])
-    table.add_column("Masa Aktif", style=theme["text_date"])
-
-    for idx, bm in enumerate(bookmarks, start=1):
-        validity = bm.get("validity", "-")
-        table.add_row(str(idx), bm["family_name"], bm["variant_name"], bm["option_name"], validity)
-
-    console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
-
-    nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
-    nav.add_column(justify="right", style=theme["text_key"], width=6)
-    nav.add_column(style=theme["text_body"])
-    nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
-
-    console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
-
-    choice = console.input(f"[{theme['text_sub']}]Pilih nomor paket:[/{theme['text_sub']}] ").strip()
-    if choice == "00":
-        return None, None
-
-    if not choice.isdigit() or not (1 <= int(choice) <= len(bookmarks)):
-        print_panel("⚠️ Error", "Pilihan tidak valid.")
-        pause()
-        return None, None
-
-    selected = bookmarks[int(choice) - 1]
-    family_data = get_family(api_key, tokens, selected["family_code"], selected["is_enterprise"])
-    if not family_data:
-        print_panel("⚠️ Error", "Gagal mengambil data family.")
-        pause()
-        return None, None
-
-    variant_code = next((v["package_variant_code"] for v in family_data["package_variants"] if v["name"] == selected["variant_name"]), None)
-    detail = get_package_details(api_key, tokens, selected["family_code"], variant_code, selected["order"], selected["is_enterprise"])
-    if not detail:
-        print_panel("⚠️ Error", "Gagal mengambil detail paket.")
-        pause()
-        return None, None
-
-    name = f"{selected['family_name']} - {selected['variant_name']} - {selected['option_name']}"
-    return detail, name
 
 
 def show_bundle_menu():
