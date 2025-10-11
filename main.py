@@ -165,7 +165,7 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
     menu_table.add_row("9", "🐒 XL CIRCLE")
     menu_table.add_row("00", "⭐ Bookmark Paket")
-    menu_table.add_row("", "")
+    menu_table.add_row("10", "🛒 Beli Paket Bundle (Multi)")
     menu_table.add_row("77", f"[{theme['border_warning']}]📢 Info Unlock Code [/]")  
     menu_table.add_row("88", f"[{theme['text_sub']}]🎨 Ganti Tema CLI [/]")          
     menu_table.add_row("99", f"[{theme['text_err']}]⛔ Tutup aplikasi [/]")
@@ -240,6 +240,9 @@ def main():
 
             case "00":
                 show_bookmark_menu()
+
+            case "10":
+                show_bundle_menu()()
 
             case "77":
                 show_donate_menu()
