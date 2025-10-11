@@ -140,7 +140,7 @@ def show_bundle_menu():
             #detail, name = get_package_from_bookmark()
             #if detail: add_to_cart(detail, name) 
 
-        elif choice == "1":
+        if choice == "1":
             result = show_bookmark_menu(return_package_detail=True)
             if isinstance(result, tuple):
                 detail, name = result
