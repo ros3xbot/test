@@ -9,6 +9,7 @@ from app.menus.util_helper import print_panel, get_rupiah
 from app.config.theme_config import get_theme
 from app.menus.package import get_packages_by_family
 from app.menus.family_grup import show_family_menu
+from app.menus.bookmark import show_bookmark_menu
 from app.type_dict import PaymentItem
 from rich.console import Console
 from rich.panel import Panel
@@ -135,9 +136,17 @@ def show_bundle_menu():
             print_panel("✅ Ditambahkan", f"Paket '{name}' berhasil masuk keranjang.")
             pause()
 
-        if choice == "1":
-            detail, name = get_package_from_bookmark()
-            if detail: add_to_cart(detail, name)
+        #if choice == "1":
+            #detail, name = get_package_from_bookmark()
+            #if detail: add_to_cart(detail, name) 
+
+        elif choice == "1":
+            result = show_bookmark_menu(return_package_detail=True)
+            if isinstance(result, tuple):
+                detail, name = result
+                if detail:
+                    add_to_cart(detail, name)
+
 
         elif choice == "2":
             result = show_family_menu(return_package_detail=True)
