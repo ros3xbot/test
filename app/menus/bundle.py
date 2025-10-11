@@ -1,10 +1,10 @@
 from app.service.auth import AuthInstance
 from app.service.bookmark import BookmarkInstance, FamilyBookmarkInstance
-from app.client.engsel import get_family_v2
+from app.client.engsel import get_family
 from app.client.engsel2 import get_package_details
 from app.client.purchase import settlement_balance
-from app.client.qris import show_qris_payment_v2
-from app.client.ewallet import show_multipayment_v2
+from app.client.qris import show_qris_payment
+from app.client.ewallet import show_multipayment
 from app.menus.util import clear_screen, pause
 from app.menus.util_helper import print_panel, get_rupiah
 from app.config.theme_config import get_theme
@@ -63,7 +63,7 @@ def get_package_from_bookmark():
         return None, None
 
     selected = bookmarks[int(choice) - 1]
-    family_data = get_family_v2(api_key, tokens, selected["family_code"], selected["is_enterprise"])
+    family_data = get_family(api_key, tokens, selected["family_code"], selected["is_enterprise"])
     if not family_data:
         print_panel("⚠️ Error", "Gagal mengambil data family.")
         pause()
@@ -235,11 +235,11 @@ def show_bundle_menu():
             payment_for = "BUY_PACKAGE"
 
             if method == "1":
-                show_multipayment_v2(api_key, tokens, cart_items, payment_for, True, exclude_shopeepay=True)
+                show_multipayment(api_key, tokens, cart_items, payment_for, True, exclude_shopeepay=True)
             elif method == "2":
-                show_multipayment_v2(api_key, tokens, cart_items, payment_for, True, force_payment_method="SHOPEEPAY")
+                show_multipayment(api_key, tokens, cart_items, payment_for, True, force_payment_method="SHOPEEPAY")
             elif method == "3":
-                show_qris_payment_v2(api_key, tokens, cart_items, payment_for, True)
+                show_qris_payment(api_key, tokens, cart_items, payment_for, True)
             elif method == "4":
                 settlement_balance(api_key, tokens, cart_items, payment_for, True)
             else:
