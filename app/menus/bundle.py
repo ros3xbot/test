@@ -1,6 +1,4 @@
 from app.service.auth import AuthInstance
-#from app.service.bookmark import BookmarkInstance
-#from app.client.engsel import get_family, get_package, get_package_details
 from app.client.balance import settlement_balance
 from app.client.qris import show_qris_payment
 from app.client.ewallet import show_multipayment
@@ -75,17 +73,12 @@ def show_bundle_menu():
             print_panel("✅ Ditambahkan", f"Paket '{name}' berhasil masuk keranjang.")
             pause()
 
-        #if choice == "1":
-            #detail, name = get_package_from_bookmark()
-            #if detail: add_to_cart(detail, name) 
-
         if choice == "1":
             result = show_bookmark_menu(return_package_detail=True)
             if isinstance(result, tuple):
                 detail, name = result
                 if detail:
                     add_to_cart(detail, name)
-
 
         elif choice == "2":
             result = show_family_menu(return_package_detail=True)
