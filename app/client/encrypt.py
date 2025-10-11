@@ -1,18 +1,13 @@
-import os
 import hashlib
 import requests
 import base64
-
+from app.config.anu_config import API_KEY, AES_KEY_ASCII, AX_FP_KEY
 from random import randint
 from datetime import datetime, timezone, timedelta
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from dataclasses import dataclass
-
-API_KEY = os.getenv("API_KEY")
-AES_KEY_ASCII = os.getenv("AES_KEY_ASCII")
-AX_FP_KEY = os.getenv("AX_FP_KEY")
 
 BASE_CRYPTO_URL = "https://crypto.mashu.lol/api/870"
 
