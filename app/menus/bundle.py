@@ -36,7 +36,6 @@ def show_bundle_menu():
             expand=True
         ))
 
-
         if cart_items:
             table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
             table.add_column("No", justify="right", style=theme["text_key"], width=4)
@@ -99,9 +98,12 @@ def show_bundle_menu():
         elif choice == "3":
             fc = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
             result = get_packages_by_family(fc, return_package_detail=True)
-            if result:
+            if result == "MAIN":
+                break
+            elif isinstance(result, tuple):
                 detail, name = result
-                add_to_cart(detail, name)
+                if detail:
+                    add_to_cart(detail, name)
 
         elif choice == "4" and cart_items:
             idx = console.input(f"[{theme['text_sub']}]Nomor item yang ingin dihapus:[/{theme['text_sub']}] ").strip()
@@ -118,46 +120,61 @@ def show_bundle_menu():
 
         elif choice == "5" and cart_items:
             clear_screen()
-            console.print(Panel("💳 Konfirmasi Pembayaran Bundle", style=theme["border_info"], expand=True))
-
-            table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
-            table.add_column("No", justify="right", style=theme["text_key"], width=4)
-            table.add_column("Nama Paket", style=theme["text_body"])
-            table.add_column("Harga", style=theme["text_money"], justify="right")
-
+            info_text = Text()
+            info_text.append("Detail Pembayaran:\n", style=theme["text_body"])
             for i, item in enumerate(display_cart, start=1):
-                table.add_row(str(i), item["name"], get_rupiah(item["price"]))
+                info_text.append(f"{i}. {item['name']} - Rp {get_rupiah(item['price'])}\n", style=theme["text_body"])
+            info_text.append(f"\nTotal: Rp {get_rupiah(total_price)}", style=theme["text_money"])
 
-            console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
-            console.print(f"[{theme['text_body']}]Total Pembayaran: Rp {get_rupiah(total_price)}[/]")
+            console.print(Panel(
+                info_text,
+                title=f"[{theme['text_title']}]💳 Konfirmasi Pembayaran[/]",
+                border_style=theme["border_info"],
+                padding=(1, 2),
+                expand=True
+            ))
 
-            nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
-            nav.add_column(justify="right", style=theme["text_key"], width=6)
-            nav.add_column(style=theme["text_body"])
-            nav.add_row("1", "💳 E-Wallet (DANA, GoPay, OVO)")
-            nav.add_row("2", "💳 ShopeePay")
-            nav.add_row("3", "📱 QRIS")
-            nav.add_row("4", "💰 Pulsa")
-            nav.add_row("0", "↩️ Batal")
-
-            console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
-
-            method = console.input(f"[{theme['text_sub']}]Pilih metode pembayaran:[/{theme['text_sub']}] ").strip()
-            payment_for = "BUY_PACKAGE"
-
-            if method == "1":
-                show_multipayment(api_key, tokens, cart_items, payment_for, True, exclude_shopeepay=True)
-            elif method == "2":
-                show_multipayment(api_key, tokens, cart_items, payment_for, True, force_payment_method="SHOPEEPAY")
-            elif method == "3":
-                show_qris_payment(api_key, tokens, cart_items, payment_for, True)
-            elif method == "4":
-                settlement_balance(api_key, tokens, cart_items, payment_for, True)
-            else:
+            confirm = console.input(f"[{theme['text_sub']}]Lanjutkan ke pembayaran? (y/n):[/{theme['text_sub']}] ").strip().lower()
+            if confirm != "y":
+                print_panel("ℹ️ Info", "Pembayaran dibatalkan.")
+                pause()
                 continue
 
-            console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter untuk kembali...[/{theme['text_sub']}]")
-            break
+            while True:
+                method_table = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+                method_table.add_column(justify="right", style=theme["text_key"], width=6)
+                method_table.add_column(style=theme["text_body"])
+                method_table.add_row("1", "💰 Balance")
+                method_table.add_row("2", "💳 E-Wallet")
+                method_table.add_row("3", "📱 QRIS")
+                method_table.add_row("00", f"[{theme['text_sub']}]Kembali[/]")
+
+                console.print(Panel(
+                    method_table,
+                    title=f"[{theme['text_title']}]💳 Pilih Metode Pembayaran[/]",
+                    border_style=theme["border_primary"],
+                    padding=(0, 1),
+                    expand=True
+                ))
+
+                method = console.input(f"[{theme['text_sub']}]Pilih metode:[/{theme['text_sub']}] ").strip()
+                if method == "1":
+                    settlement_balance(api_key, tokens, cart_items, "BUY_PACKAGE", True)
+                    console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter...[/{theme['text_sub']}]")
+                    break
+                elif method == "2":
+                    show_multipayment(api_key, tokens, cart_items, "BUY_PACKAGE", True)
+                    console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter...[/{theme['text_sub']}]")
+                    break
+                elif method == "3":
+                    show_qris_payment(api_key, tokens, cart_items, "BUY_PACKAGE", True)
+                    console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter...[/{theme['text_sub']}]")
+                    break
+                elif method == "00":
+                    break
+                else:
+                    print_panel("⚠️ Error", "Metode tidak valid.")
+                    pause()
 
         elif choice == "00":
             break
@@ -165,4 +182,5 @@ def show_bundle_menu():
         else:
             print_panel("⚠️ Error", "Pilihan tidak valid.")
             pause()
+
 
