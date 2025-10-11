@@ -1,12 +1,8 @@
 import os
 import requests
 import uuid
-from app.service.crypto import decrypt_xdata, get_signature, java_like_timestamp
-
-# Ambil dari .env
-BASE_API_URL = os.getenv("BASE_API_URL")
-API_KEY = os.getenv("API_KEY")
-UA = os.getenv("UA")
+from app.client.engsel import send_api_request, BASE_API_URL, API_KEY, UA, java_like_timestamp
+from app.client.encrypt import encryptsign_xdata, decrypt_xdata
 
 def _build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at) -> dict:
     return {
