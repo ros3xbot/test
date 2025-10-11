@@ -1,6 +1,4 @@
-from app.menus.package import show_package_details
-#from app.service.package_detail import get_package_details
-
+from app.client.engsel import get_family, get_package_details
 from app.service.auth import AuthInstance
 from app.menus.util import clear_screen, pause
 from app.menus.util_helper import print_panel
@@ -101,7 +99,7 @@ def show_bookmark_menu(return_package_detail: bool = False):
                 continue
 
             if return_package_detail:
-                detail = show_package_details(
+                detail = get_package_details(
                     api_key, tokens,
                     family_code,
                     variant_code,
