@@ -74,7 +74,7 @@ def show_family_menu(return_package_detail: bool = False):
         theme = get_theme()
 
         console.print(Panel(
-            Align.center("📋 Kode Yang Terdaftar", vertical="middle"),
+            Align.center("📋 Family Kode Yang Terdaftar", vertical="middle"),
             border_style=theme["border_info"],
             padding=(1, 2),
             expand=True
