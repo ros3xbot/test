@@ -1,252 +1,256 @@
-import json
-from app.client.balance import settlement_balance
-from app.client.engsel import get_family, get_package, get_package_details
-from app.client.ewallet import show_multipayment
-from app.client.qris import show_qris_payment
-from app.menus.package import get_packages_by_family
-from app.menus.util import clear_screen, pause, print_header, Style
 from app.service.auth import AuthInstance
-from app.service.bookmark import BookmarkInstance
-from app.service.family_bookmark import FamilyBookmarkInstance
+from app.service.bookmark import BookmarkInstance, FamilyBookmarkInstance
+from app.client.engsel import get_family_v2
+from app.client.engsel2 import get_package_details
+from app.client.purchase import settlement_balance
+from app.client.qris import show_qris_payment_v2
+from app.client.ewallet import show_multipayment_v2
+from app.menus.util import clear_screen, pause
+from app.menus.util_helper import print_panel, get_rupiah
+from app.config.theme_config import get_theme
+from app.menus.package import get_packages_by_family
 from app.type_dict import PaymentItem
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.box import MINIMAL_DOUBLE_HEAD
+
+console = Console()
+
+
 def get_package_from_bookmark():
-    """
-    Menampilkan daftar bookmark dan mengembalikan detail paket yang dipilih.
-    Mengembalikan tuple (package_detail, display_name).
-    """
     api_key = AuthInstance.api_key
     tokens = AuthInstance.get_active_tokens()
-    
+    theme = get_theme()
+
     clear_screen()
-    print_header("➕ Tambah Paket dari Bookmark")
+    console.print(Panel("📌 Tambah Paket dari Bookmark", style=theme["border_info"], expand=True))
+
     bookmarks = BookmarkInstance.get_bookmarks()
     if not bookmarks:
-        print("Tidak ada bookmark tersimpan.")
+        print_panel("ℹ️ Info", "Tidak ada bookmark tersimpan.")
         pause()
         return None, None
 
-    for idx, bm in enumerate(bookmarks):
-        validity_str = f" ({bm.get('validity', '')})" if bm.get('validity') else ""
-        print(f"  {Style.CYAN}[{idx + 1}]{Style.RESET}. {bm['family_name']} - {bm['variant_name']} - {bm['option_name']}{validity_str}")
-    
-    print("\n" + ("-"*55))
-    print(f"  {Style.CYAN}[00]{Style.RESET}. ↩️  Kembali")
-    print(f"{'-'*55}")
-    choice = input("Pilih nomor paket yang ingin ditambahkan > ")
+    table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
+    table.add_column("No", justify="right", style=theme["text_key"], width=4)
+    table.add_column("Family", style=theme["text_body"])
+    table.add_column("Varian", style=theme["text_body"])
+    table.add_column("Paket", style=theme["text_body"])
+    table.add_column("Masa Aktif", style=theme["text_date"])
 
+    for idx, bm in enumerate(bookmarks, start=1):
+        validity = bm.get("validity", "-")
+        table.add_row(str(idx), bm["family_name"], bm["variant_name"], bm["option_name"], validity)
+
+    console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
+
+    nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+    nav.add_column(justify="right", style=theme["text_key"], width=6)
+    nav.add_column(style=theme["text_body"])
+    nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
+
+    console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
+
+    choice = console.input(f"[{theme['text_sub']}]Pilih nomor paket:[/{theme['text_sub']}] ").strip()
     if choice == "00":
         return None, None
 
-    if choice.isdigit() and 1 <= int(choice) <= len(bookmarks):
-        selected_bm = bookmarks[int(choice) - 1]
-        
-        # Ambil data family terlebih dahulu untuk menemukan variant_code
-        family_data = get_family_v2(api_key, tokens, selected_bm['family_code'], selected_bm['is_enterprise'])
-        if not family_data:
-            print("Gagal mengambil data family untuk bookmark.")
-            pause()
-            return None, None
-
-        # Cari variant_code berdasarkan variant_name dari bookmark
-        variant_code = None
-        for variant in family_data.get("package_variants", []):
-            if variant.get("name") == selected_bm['variant_name']:
-                variant_code = variant.get("package_variant_code")
-                break
-
-        print("Mengambil detail paket...")
-        package_detail = get_package_details(
-            api_key, tokens, 
-            selected_bm['family_code'], 
-            variant_code, # Gunakan variant_code yang sudah ditemukan
-            selected_bm['order'], 
-            selected_bm['is_enterprise']
-        )
-        
-        if package_detail:
-            display_name = f"{selected_bm['family_name']} - {selected_bm['variant_name']} - {selected_bm['option_name']}"
-            return package_detail, display_name
-        else:
-            print("Gagal mengambil detail paket dari bookmark.")
-            pause()
-            return None, None
-    else:
-        print("Pilihan tidak valid.")
+    if not choice.isdigit() or not (1 <= int(choice) <= len(bookmarks)):
+        print_panel("⚠️ Error", "Pilihan tidak valid.")
         pause()
         return None, None
+
+    selected = bookmarks[int(choice) - 1]
+    family_data = get_family_v2(api_key, tokens, selected["family_code"], selected["is_enterprise"])
+    if not family_data:
+        print_panel("⚠️ Error", "Gagal mengambil data family.")
+        pause()
+        return None, None
+
+    variant_code = next((v["package_variant_code"] for v in family_data["package_variants"] if v["name"] == selected["variant_name"]), None)
+    detail = get_package_details(api_key, tokens, selected["family_code"], variant_code, selected["order"], selected["is_enterprise"])
+    if not detail:
+        print_panel("⚠️ Error", "Gagal mengambil detail paket.")
+        pause()
+        return None, None
+
+    name = f"{selected['family_name']} - {selected['variant_name']} - {selected['option_name']}"
+    return detail, name
+
 
 def get_package_from_family_bookmark():
-    """
-    Menampilkan daftar bookmark family code dan mengembalikan detail paket yang dipilih.
-    Mengembalikan tuple (package_detail, display_name).
-    """
+    theme = get_theme()
     clear_screen()
-    print_header("➕ Tambah Paket dari Bookmark Family Code")
-    
+    console.print(Panel("📌 Tambah Paket dari Bookmark Family Code", style=theme["border_info"], expand=True))
+
     bookmarks = FamilyBookmarkInstance.get_bookmarks()
     if not bookmarks:
-        print("Tidak ada bookmark family code tersimpan.")
+        print_panel("ℹ️ Info", "Tidak ada bookmark family code tersimpan.")
         pause()
         return None, None
 
-    print("Daftar Bookmark Family Code:")
-    for idx, bm in enumerate(bookmarks):
-        print(f"  {Style.CYAN}[{idx + 1}]{Style.RESET}. {bm['family_name']} ({bm['family_code']})")
+    table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
+    table.add_column("No", justify="right", style=theme["text_key"], width=4)
+    table.add_column("Family", style=theme["text_body"])
+    table.add_column("Kode", style=theme["border_warning"])
 
-    print("\n" + ("-"*55))
-    print(f"  {Style.CYAN}[00]{Style.RESET}. ↩️  Kembali")
-    print(f"{'-'*55}")
-    choice = input("Pilih nomor family code > ")
+    for idx, bm in enumerate(bookmarks, start=1):
+        table.add_row(str(idx), bm["family_name"], bm["family_code"])
 
+    console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
+
+    nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+    nav.add_column(justify="right", style=theme["text_key"], width=6)
+    nav.add_column(style=theme["text_body"])
+    nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
+
+    console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
+
+    choice = console.input(f"[{theme['text_sub']}]Pilih nomor family code:[/{theme['text_sub']}] ").strip()
     if choice == "00":
         return None, None
 
-    if choice.isdigit() and 1 <= int(choice) <= len(bookmarks):
-        selected_bm = bookmarks[int(choice) - 1]
-        # Panggil get_packages_by_family untuk memilih paket dari family tersebut
-        return get_packages_by_family(selected_bm['family_code'], return_package_detail=True)
-    else:
-        print("Pilihan tidak valid.")
+    if not choice.isdigit() or not (1 <= int(choice) <= len(bookmarks)):
+        print_panel("⚠️ Error", "Pilihan tidak valid.")
         pause()
         return None, None
+
+    selected = bookmarks[int(choice) - 1]
+    return get_packages_by_family(selected["family_code"], return_package_detail=True)
+
 
 def show_bundle_menu():
     api_key = AuthInstance.api_key
     tokens = AuthInstance.get_active_tokens()
-    cart_items: list[PaymentItem] = []
+    theme = get_theme()
+
+    cart_items = []
     display_cart = []
     total_price = 0
 
-    in_bundle_menu = True
-    while in_bundle_menu:
+    while True:
         clear_screen()
-        print_header("🛒 Keranjang Paket Bundle")
+        console.print(Panel("🛒 Keranjang Paket Bundle", style=theme["border_info"], expand=True))
 
-        if not cart_items:
-            print("Keranjang Anda masih kosong.")
-        else:
-            print("Isi Keranjang:")
-            for i, item in enumerate(display_cart):
-                print(f"  {Style.CYAN}[{i+1}]{Style.RESET}. {item['name']} - Rp {item['price']}")
-            print(f"{'-'*55}")
-            print(f"  Total Harga: Rp {total_price}")
-
-        print("\n" + ("-"*55))
-        print(f"  {Style.CYAN}[1]{Style.RESET}. ➕ Tambah Paket dari Bookmark")
-        print(f"  {Style.CYAN}[2]{Style.RESET}. ➕ Tambah Paket dari Bookmark Family Code")
-        print(f"  {Style.CYAN}[3]{Style.RESET}. ➕ Tambah Paket dari Family Code (Manual)")
-        print(f"  {Style.CYAN}[4]{Style.RESET}. 🗑️ Hapus item dari keranjang")
         if cart_items:
-            print(f"  {Style.CYAN}[5]{Style.RESET}. 💳 Lanjutkan ke Pembayaran")
-        print(f"  {Style.CYAN}[00]{Style.RESET}. ↩️ Kembali ke Menu Utama")
-        print(f"{'-'*55}")
-        
-        choice = input("Pilihan > ")
+            table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
+            table.add_column("No", justify="right", style=theme["text_key"], width=4)
+            table.add_column("Nama Paket", style=theme["text_body"])
+            table.add_column("Harga", style=theme["text_money"], justify="right")
 
-        if choice == '1':
-            package_detail, display_name = get_package_from_bookmark()
-            if package_detail:
-                option = package_detail['package_option']
-                cart_items.append(PaymentItem(
-                    item_code=option['package_option_code'],
-                    product_type="", item_price=option['price'],
-                    item_name=option['name'], tax=0,
-                    token_confirmation=package_detail['token_confirmation']
-                ))
-                display_cart.append({'name': display_name, 'price': option['price']})
-                total_price += option['price']
-                print(f"✅ Paket '{display_name}' berhasil ditambahkan ke keranjang.")
-                pause()
+            for i, item in enumerate(display_cart, start=1):
+                table.add_row(str(i), item["name"], get_rupiah(item["price"]))
 
-        elif choice == '2':
-            package_detail, display_name = get_package_from_family_bookmark()
-            if package_detail:
-                option = package_detail['package_option']
-                cart_items.append(PaymentItem(
-                    item_code=option['package_option_code'],
-                    product_type="", item_price=option['price'],
-                    item_name=option['name'], tax=0,
-                    token_confirmation=package_detail['token_confirmation']
-                ))
-                display_cart.append({'name': display_name, 'price': option['price']})
-                total_price += option['price']
-                print(f"✅ Paket '{display_name}' berhasil ditambahkan ke keranjang.")
-                pause()
+            console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
+            console.print(f"[{theme['text_body']}]Total Harga: Rp {get_rupiah(total_price)}[/]")
+        else:
+            print_panel("ℹ️ Info", "Keranjang masih kosong.")
 
+        nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+        nav.add_column(justify="right", style=theme["text_key"], width=6)
+        nav.add_column(style=theme["text_body"])
+        nav.add_row("1", "➕ Tambah dari Bookmark")
+        nav.add_row("2", "➕ Tambah dari Bookmark Family Code")
+        nav.add_row("3", "➕ Tambah dari Family Code Manual")
+        nav.add_row("4", "🗑️ Hapus Item dari Keranjang")
+        if cart_items:
+            nav.add_row("5", "💳 Lanjutkan ke Pembayaran")
+        nav.add_row("00", "↩️ Kembali ke Menu Utama")
 
-        elif choice == '3':
-            family_code = input("Masukkan Family Code: ")
-            # Fungsi ini akan menampilkan daftar paket dan mengembalikan detail paket yg dipilih
-            result = get_packages_by_family(family_code, return_package_detail=True)
-            if not result:
-                # get_packages_by_family sudah menangani pesan error, jadi kita hanya perlu lanjut.
-                continue
-            
-            package_detail, display_name = result
-            if package_detail:
-                option = package_detail['package_option']
-                cart_items.append(PaymentItem(
-                    item_code=option['package_option_code'],
-                    product_type="", item_price=option['price'],
-                    item_name=option['name'], tax=0,
-                    token_confirmation=package_detail['token_confirmation']
-                ))
-                display_cart.append({'name': display_name, 'price': option['price']})
-                total_price += option['price']
-                print(f"✅ Paket '{display_name}' berhasil ditambahkan ke keranjang.")
-                pause()
+        console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
 
-        elif choice == '4' and cart_items:
-            del_choice = input("Masukkan nomor item yang ingin dihapus: ")
-            if del_choice.isdigit() and 1 <= int(del_choice) <= len(cart_items):
-                idx_to_del = int(del_choice) - 1
-                removed_item = display_cart.pop(idx_to_del)
-                cart_items.pop(idx_to_del)
-                total_price -= removed_item['price']
-                print(f"Item '{removed_item['name']}' telah dihapus.")
+        choice = console.input(f"[{theme['text_sub']}]Pilihan:[/{theme['text_sub']}] ").strip()
+
+        def add_to_cart(detail, name):
+            nonlocal total_price
+            option = detail["package_option"]
+            cart_items.append(PaymentItem(
+                item_code=option["package_option_code"],
+                product_type="", item_price=option["price"],
+                item_name=option["name"], tax=0,
+                token_confirmation=detail["token_confirmation"]
+            ))
+            display_cart.append({"name": name, "price": option["price"]})
+            total_price += option["price"]
+            print_panel("✅ Ditambahkan", f"Paket '{name}' berhasil masuk keranjang.")
+            pause()
+
+        if choice == "1":
+            detail, name = get_package_from_bookmark()
+            if detail: add_to_cart(detail, name)
+
+        elif choice == "2":
+            detail, name = get_package_from_family_bookmark()
+            if detail: add_to_cart(detail, name)
+
+        elif choice == "3":
+            fc = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
+            result = get_packages_by_family(fc, return_package_detail=True)
+            if result:
+                detail, name = result
+                detail: add_to_cart(detail, name)
+
+        elif choice == "4" and cart_items:
+            idx = console.input(f"[{theme['text_sub']}]Nomor item yang ingin dihapus:[/{theme['text_sub']}] ").strip()
+            if idx.isdigit() and 1 <= int(idx) <= len(cart_items):
+                i = int(idx) - 1
+                removed = display_cart.pop(i)
+                cart_items.pop(i)
+                total_price -= removed["price"]
+                print_panel("🗑️ Dihapus", f"Item '{removed['name']}' telah dihapus.")
                 pause()
             else:
-                print("Nomor item tidak valid.")
+                print_panel("⚠️ Error", "Nomor item tidak valid.")
                 pause()
 
-        elif choice == '5' and cart_items:
+        elif choice == "5" and cart_items:
             clear_screen()
-            print_header("💳 Konfirmasi Pembayaran Bundle")
-            for i, item in enumerate(display_cart):
-                print(f"  {i+1}. {item['name']} - Rp {item['price']}")
-            print(f"{'-'*55}")
-            print(f"  Total Pembayaran: Rp {total_price}")
-            print(f"{'-'*55}")
+            console.print(Panel("💳 Konfirmasi Pembayaran Bundle", style=theme["border_info"], expand=True))
 
-            print("\nMetode Pembayaran:")
-            print(f"  {Style.CYAN}[1]{Style.RESET}. 💳 E-Wallet (DANA, GoPay, OVO)")
-            print(f"  {Style.CYAN}[2]{Style.RESET}. 💳 ShopeePay")
-            print(f"  {Style.CYAN}[3]{Style.RESET}. 📱 QRIS")
-            print(f"  {Style.CYAN}[4]{Style.RESET}. 💰 Pulsa")
-            print(f"  {Style.CYAN}[0]{Style.RESET}. ↩️ Batal")
-            print(f"{'-'*25}")
-            
-            method_choice = input("Pilih metode pembayaran > ")
-            payment_for = "BUY_PACKAGE" # Asumsi
+            table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
+            table.add_column("No", justify="right", style=theme["text_key"], width=4)
+            table.add_column("Nama Paket", style=theme["text_body"])
+            table.add_column("Harga", style=theme["text_money"], justify="right")
 
-            if method_choice == '1':
+            for i, item in enumerate(display_cart, start=1):
+                table.add_row(str(i), item["name"], get_rupiah(item["price"]))
+
+            console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
+            console.print(f"[{theme['text_body']}]Total Pembayaran: Rp {get_rupiah(total_price)}[/]")
+
+            nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
+            nav.add_column(justify="right", style=theme["text_key"], width=6)
+            nav.add_column(style=theme["text_body"])
+            nav.add_row("1", "💳 E-Wallet (DANA, GoPay, OVO)")
+            nav.add_row("2", "💳 ShopeePay")
+            nav.add_row("3", "📱 QRIS")
+            nav.add_row("4", "💰 Pulsa")
+            nav.add_row("0", "↩️ Batal")
+
+            console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
+
+            method = console.input(f"[{theme['text_sub']}]Pilih metode pembayaran:[/{theme['text_sub']}] ").strip()
+            payment_for = "BUY_PACKAGE"
+
+            if method == "1":
                 show_multipayment_v2(api_key, tokens, cart_items, payment_for, True, exclude_shopeepay=True)
-            elif method_choice == '2':
+            elif method == "2":
                 show_multipayment_v2(api_key, tokens, cart_items, payment_for, True, force_payment_method="SHOPEEPAY")
-            elif method_choice == '3':
+            elif method == "3":
                 show_qris_payment_v2(api_key, tokens, cart_items, payment_for, True)
-            elif method_choice == '4':
+            elif method == "4":
                 settlement_balance(api_key, tokens, cart_items, payment_for, True)
             else:
                 continue
-            
-            input("\nTekan Enter untuk kembali ke menu utama...")
-            in_bundle_menu = False
 
-        elif choice == '00':
-            in_bundle_menu = False
+            console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter untuk kembali...[/{theme['text_sub']}]")
+            break
+
+        elif choice == "00":
+            break
 
         else:
-            print("Pilihan tidak valid.")
+            print_panel("⚠️ Error", "Pilihan tidak valid.")
             pause()
