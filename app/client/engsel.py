@@ -1,40 +1,37 @@
 import json
 import uuid
 import requests
-from app.config.anu_config import BASE_API_URL, BASE_CIAM_URL, BASIC_AUTH, UA
 from datetime import datetime, timedelta, timezone
-from app.menus.util_helper import live_loading, print_panel
-from app.config.theme_config import get_theme
 
+from app.config.anu_config import BASE_API_URL, BASE_CIAM_URL, BASIC_AUTH, UA, API_KEY
+from app.config.theme_config import get_theme
+from app.menus.util_helper import live_loading, print_panel
 from app.client.encrypt import (
     encryptsign_xdata,
     java_like_timestamp,
     ts_gmt7_without_colon,
     ax_api_signature,
     decrypt_xdata,
-    API_KEY,
     load_ax_fp,
     ax_device_id
 )
 
+# Konstanta URL dan fingerprint
 GET_OTP_URL = BASE_CIAM_URL + "/realms/xl-ciam/auth/otp"
+SUBMIT_OTP_URL = BASE_CIAM_URL + "/realms/xl-ciam/protocol/openid-connect/token"
 AX_DEVICE_ID = ax_device_id()
 AX_FP = load_ax_fp()
-SUBMIT_OTP_URL = BASE_CIAM_URL + "/realms/xl-ciam/protocol/openid-connect/token"
 
+# Validasi nomor
 def validate_contact(contact: str) -> bool:
-    if not contact.startswith("628") or len(contact) > 14:
-        print("Invalid number")
-        return False
-    return True
+    return contact.startswith("628") and len(contact) <= 14
 
-
+# Kirim OTP
 def get_otp(contact: str) -> str:
     if not validate_contact(contact):
         print_panel("⚠️ Error", "Nomor tidak valid.")
         return None
 
-    url = GET_OTP_URL
     querystring = {
         "contact": contact,
         "contactType": "SMS",
@@ -45,7 +42,6 @@ def get_otp(contact: str) -> str:
     ax_request_at = java_like_timestamp(now)
     ax_request_id = str(uuid.uuid4())
 
-    payload = ""
     headers = {
         "Accept-Encoding": "gzip, deflate, br",
         "Authorization": f"Basic {BASIC_AUTH}",
@@ -64,7 +60,7 @@ def get_otp(contact: str) -> str:
     theme = get_theme()
     try:
         with live_loading("Mengirim OTP ke nomor Anda...", theme):
-            response = requests.get(url, data=payload, headers=headers, params=querystring, timeout=30)
+            response = requests.get(GET_OTP_URL, headers=headers, params=querystring, timeout=30)
 
         json_body = json.loads(response.text)
         if "subscriber_id" not in json_body:
@@ -76,7 +72,7 @@ def get_otp(contact: str) -> str:
         print_panel("⚠️ Error", f"Gagal mengirim OTP: {e}")
         return None
 
-
+# Submit OTP
 def submit_otp(api_key: str, contact: str, code: str):
     if not validate_contact(contact):
         print_panel("⚠️ Error", "Nomor tidak valid.")
@@ -86,7 +82,6 @@ def submit_otp(api_key: str, contact: str, code: str):
         print_panel("⚠️ Error", "Format OTP tidak valid. Harus 6 digit angka.")
         return None
 
-    url = SUBMIT_OTP_URL
     now_gmt7 = datetime.now(timezone(timedelta(hours=7)))
     ts_for_sign = ts_gmt7_without_colon(now_gmt7)
     ts_header = ts_gmt7_without_colon(now_gmt7 - timedelta(minutes=5))
@@ -111,7 +106,7 @@ def submit_otp(api_key: str, contact: str, code: str):
     theme = get_theme()
     try:
         with live_loading("Memverifikasi OTP dan login...", theme):
-            response = requests.post(url, data=payload, headers=headers, timeout=30)
+            response = requests.post(SUBMIT_OTP_URL, data=payload, headers=headers, timeout=30)
 
         json_body = json.loads(response.text)
         if "error" in json_body:
@@ -124,10 +119,9 @@ def submit_otp(api_key: str, contact: str, code: str):
         print_panel("⚠️ Error", f"Gagal login: {e}")
         return None
 
+# Refresh token
 def get_new_token(refresh_token: str) -> str:
-    url = SUBMIT_OTP_URL
-
-    now = datetime.now(timezone(timedelta(hours=7)))  # GMT+7
+    now = datetime.now(timezone(timedelta(hours=7)))
     ax_request_at = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+0700"
     ax_request_id = str(uuid.uuid4())
 
@@ -150,46 +144,31 @@ def get_new_token(refresh_token: str) -> str:
         "refresh_token": refresh_token
     }
 
-    resp = requests.post(url, headers=headers, data=data, timeout=30)
-    if resp.status_code == 400:
-        if resp.json().get("error_description") == "Session not active":
-            print("Refresh token expired. Pleas remove and re-add the account.")
-            return None
-        
-    resp.raise_for_status()
+    resp = requests.post(SUBMIT_OTP_URL, headers=headers, data=data, timeout=30)
+    if resp.status_code == 400 and resp.json().get("error_description") == "Session not active":
+        print("Refresh token expired. Silakan hapus dan login ulang.")
+        return None
 
+    resp.raise_for_status()
     body = resp.json()
-    
+
     if "id_token" not in body:
-        raise ValueError("ID token not found in response")
+        raise ValueError("ID token tidak ditemukan dalam response")
     if "error" in body:
-        raise ValueError(f"Error in response: {body['error']} - {body.get('error_description', '')}")
-    
+        raise ValueError(f"Error: {body['error']} - {body.get('error_description', '')}")
+
     return body
 
-def send_api_request(
-    api_key: str,
-    path: str,
-    payload_dict: dict,
-    id_token: str,
-    method: str = "POST",
-):
-    encrypted_payload = encryptsign_xdata(
-        api_key=api_key,
-        method=method,
-        path=path,
-        id_token=id_token,
-        payload=payload_dict
-    )
-    
+# Kirim request terenkripsi
+def send_api_request(api_key: str, path: str, payload_dict: dict, id_token: str, method: str = "POST"):
+    encrypted_payload = encryptsign_xdata(api_key, method, path, id_token, payload_dict)
     xtime = int(encrypted_payload["encrypted_body"]["xtime"])
-    
-    now = datetime.now(timezone.utc).astimezone()
-    sig_time_sec = (xtime // 1000)
+    sig_time_sec = xtime // 1000
 
+    now = datetime.now(timezone.utc).astimezone()
     body = encrypted_payload["encrypted_body"]
     x_sig = encrypted_payload["x_signature"]
-    
+
     headers = {
         "host": BASE_API_URL.replace("https://", ""),
         "content-type": "application/json; charset=utf-8",
@@ -203,24 +182,17 @@ def send_api_request(
         "x-request-at": java_like_timestamp(now),
         "x-version-app": "8.7.0",
     }
-    
-    
 
     url = f"{BASE_API_URL}/{path}"
     resp = requests.post(url, headers=headers, data=json.dumps(body), timeout=30)
-    
-    # print(f"Headers: {json.dumps(headers, indent=2)}")
-    # print(f"Response body: {resp.text}")
 
     try:
-        decrypted_body = decrypt_xdata(api_key, json.loads(resp.text))
-        # print(f"Decrypted body: {json.dumps(decrypted_body, indent=2)}")
-        return decrypted_body
+        return decrypt_xdata(api_key, json.loads(resp.text))
     except Exception as e:
         print("[decrypt err]", e)
         return resp.text
 
-
+# Ambil profil pengguna
 def get_profile(api_key: str, access_token: str, id_token: str) -> dict:
     path = "api/v8/profile"
     raw_payload = {
@@ -234,9 +206,9 @@ def get_profile(api_key: str, access_token: str, id_token: str) -> dict:
     with live_loading("Mengambil profil pengguna...", theme):
         res = send_api_request(api_key, path, raw_payload, id_token, "POST")
 
-    return res.get("data")
+    return res.get("data", {})
 
-
+# Ambil saldo dan kuota
 def get_balance(api_key: str, id_token: str) -> dict:
     path = "api/v8/packages/balance-and-credit"
     raw_payload = {
@@ -252,9 +224,7 @@ def get_balance(api_key: str, id_token: str) -> dict:
         return res["data"]["balance"]
     else:
         print_panel("⚠️ Error", res.get("error", "Gagal mengambil saldo."))
-        #return None
         return {}
-
 
 
 def get_family(
