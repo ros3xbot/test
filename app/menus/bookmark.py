@@ -46,7 +46,7 @@ def show_bookmark_menu(return_package_detail: bool = False):
         nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
         nav.add_column(justify="right", style=theme["text_key"], width=6)
         nav.add_column(justify="left", style=theme["text_body"])
-        nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu utama[/]")
+        nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu awal[/]")
         nav.add_row("000", f"[{theme['text_err']}]Hapus Bookmark[/]")
 
         console.print(Panel(nav, border_style=theme["border_info"], expand=True))
