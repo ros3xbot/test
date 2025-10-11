@@ -50,7 +50,7 @@ def show_bundle_menu():
             console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
             console.print(f"[{theme['text_body']}]Total Harga: Rp {get_rupiah(total_price)}[/]")
         else:
-            print_panel("ℹ️ Info", "Keranjang masih kosong.")
+            print_panel("Keranjang masih kosong.")
 
         nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
         nav.add_column(justify="right", style=theme["text_key"], width=6)
@@ -61,7 +61,7 @@ def show_bundle_menu():
         nav.add_row("4", "Hapus Item dari Keranjang")
         if cart_items:
             nav.add_row("5", "💳 Lanjutkan ke Pembayaran")
-        nav.add_row("00", "↩️ Kembali ke Menu Utama")
+        nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu utama[/]")
 
         console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
 
