@@ -129,17 +129,11 @@ def show_bundle_menu():
 
             console.print(Panel(
                 info_text,
-                title=f"[{theme['text_title']}]💳 Konfirmasi Pembayaran[/]",
+                title=f"[{theme['text_title']}]Informasi Pembayaran[/]",
                 border_style=theme["border_info"],
                 padding=(1, 2),
                 expand=True
             ))
-
-            confirm = console.input(f"[{theme['text_sub']}]Lanjutkan ke pembayaran? (y/n):[/{theme['text_sub']}] ").strip().lower()
-            if confirm != "y":
-                print_panel("ℹ️ Info", "Pembayaran dibatalkan.")
-                pause()
-                continue
 
             while True:
                 method_table = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
@@ -148,7 +142,7 @@ def show_bundle_menu():
                 method_table.add_row("1", "💰 Balance")
                 method_table.add_row("2", "💳 E-Wallet")
                 method_table.add_row("3", "📱 QRIS")
-                method_table.add_row("00", f"[{theme['text_sub']}]Kembali[/]")
+                method_table.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
 
                 console.print(Panel(
                     method_table,
@@ -159,6 +153,16 @@ def show_bundle_menu():
                 ))
 
                 method = console.input(f"[{theme['text_sub']}]Pilih metode:[/{theme['text_sub']}] ").strip()
+
+                if method == "00":
+                    break
+
+                confirm = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian dengan metode ini? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                if confirm != "y":
+                    print_panel("ℹ️ Info", "Pembayaran dibatalkan.")
+                    pause()
+                    continue
+
                 if method == "1":
                     settlement_balance(api_key, tokens, cart_items, "BUY_PACKAGE", True)
                     console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter...[/{theme['text_sub']}]")
@@ -171,8 +175,6 @@ def show_bundle_menu():
                     show_qris_payment(api_key, tokens, cart_items, "BUY_PACKAGE", True)
                     console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter...[/{theme['text_sub']}]")
                     break
-                elif method == "00":
-                    break
                 else:
                     print_panel("⚠️ Error", "Metode tidak valid.")
                     pause()
@@ -183,5 +185,3 @@ def show_bundle_menu():
         else:
             print_panel("⚠️ Error", "Pilihan tidak valid.")
             pause()
-
-
