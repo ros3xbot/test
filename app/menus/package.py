@@ -304,9 +304,10 @@ def get_packages_by_family(
         # Input
         choice = console.input(f"[{theme['text_sub']}]Pilih paket (nomor):[/{theme['text_sub']}] ").strip()
         if choice == "00":
-            return None if return_package_detail else "BACK"
+            return "BACK" if not return_package_detail else None
         elif choice == "99":
-            return None if return_package_detail else "MAIN"
+            return "MAIN"
+
         elif not choice.isdigit():
             print_panel("⚠️ Error", "Input tidak valid. Masukkan nomor paket.")
             pause()
