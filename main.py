@@ -20,6 +20,7 @@ from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
 from app.menus.circle import show_circle_menu
 from app.menus.bundle import show_bundle_menu
+from app.menus.family_bookmark import show_family_bookmark_menu
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
