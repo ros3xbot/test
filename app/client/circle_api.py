@@ -3,36 +3,11 @@ import requests
 import uuid
 import json
 from datetime import datetime, timezone
-from app.config.theme_config import get_theme
-from app.service.auth import AuthInstance
-from app.client.engsel import send_api_request, BASE_API_URL, API_KEY, UA, java_like_timestamp
-from app.client.encrypt import encryptsign_xdata, decrypt_xdata
+from app.client.encrypt import decrypt_xdata, java_like_timestamp, get_x_signature_payment
 
-# ====================
-# Helper Signature & Timestamp
-# ====================
-
-def java_like_timestamp(now: datetime) -> str:
-    ms2 = f"{int(now.microsecond / 10000):02d}"
-    tz = now.strftime("%z")
-    tz_colon = tz[:-2] + ":" + tz[-2:] if tz else "+00:00"
-    return now.strftime(f"%Y-%m-%dT%H:%M:%S.{ms2}") + tz_colon
-
-def get_x_signature_circle(package_code: str, token_confirmation: str, path: str, method: str, timestamp: int) -> str:
-    SERVER_URL = "https://flask-poin.onrender.com/get-signature-point"
-    payload = {
-        "package_code": package_code,
-        "token_confirmation": token_confirmation,
-        "path": path,
-        "method": method,
-        "timestamp": timestamp,
-    }
-    response = requests.post(SERVER_URL, json=payload)
-    response.raise_for_status()
-    data = response.json()
-    if "signature" not in data:
-        raise ValueError(f"Invalid response: {data}")
-    return data["signature"]
+BASE_API_URL = os.getenv("BASE_API_URL")
+API_KEY = os.getenv("API_KEY")
+UA = os.getenv("UA")
 
 def build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at: datetime) -> dict:
     return {
@@ -49,18 +24,28 @@ def build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at: d
         "x-version-app": "8.7.0",
     }
 
-def post_circle(tokens: dict, path: str, payload: dict, package_code: str = "", token_confirmation: str = "", method: str = "POST", decrypt=True):
+def post_circle(tokens: dict, path: str, payload: dict, package_code: str, token_payment: str, payment_for: str = "FAMILY_HUB_MEMBER"):
     timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
     sig_time_sec = timestamp // 1000
     x_requested_at = datetime.fromtimestamp(sig_time_sec, tz=timezone.utc).astimezone()
-    x_sig = get_x_signature_circle(package_code, token_confirmation, path, method, timestamp)
+
+    x_sig = get_x_signature_payment(
+        api_key=API_KEY,
+        access_token=tokens["access_token"],
+        sig_time_sec=sig_time_sec,
+        package_code=package_code,
+        token_payment=token_payment,
+        payment_method="BALANCE",  # default, bisa disesuaikan
+        payment_for=payment_for,
+        path=path
+    )
 
     headers = build_headers(tokens, sig_time_sec, x_sig, x_requested_at)
     url = f"{BASE_API_URL}/{path}"
     resp = requests.post(url, headers=headers, json=payload, timeout=30)
 
     try:
-        return decrypt_xdata(resp.json()) if decrypt else resp.json()
+        return decrypt_xdata(API_KEY, resp.json())
     except Exception:
         return resp.json()
 
@@ -75,7 +60,7 @@ def validate_member(tokens: dict, msisdn: str):
         "is_enterprise": False,
         "msisdn": msisdn
     }
-    return post_circle(tokens, path, payload, package_code=msisdn, token_confirmation="validate")
+    return post_circle(tokens, path, payload, package_code=msisdn, token_payment="validate")
 
 def check_group_status(tokens: dict, msisdn: str):
     return validate_member(tokens, msisdn)
@@ -87,7 +72,7 @@ def get_group_info(tokens: dict, group_id: str):
         "is_enterprise": False,
         "group_id": group_id
     }
-    return post_circle(tokens, path, payload, package_code=group_id, token_confirmation="info")
+    return post_circle(tokens, path, payload, package_code=group_id, token_payment="info")
 
 def get_spending_tracker(tokens: dict, family_id: str, parent_subs_id: str):
     path = "gamification/api/v8/family-hub/spending-tracker"
@@ -97,7 +82,7 @@ def get_spending_tracker(tokens: dict, family_id: str, parent_subs_id: str):
         "family_id": family_id,
         "parent_subs_id": parent_subs_id
     }
-    return post_circle(tokens, path, payload, package_code=family_id, token_confirmation=parent_subs_id)
+    return post_circle(tokens, path, payload, package_code=family_id, token_payment=parent_subs_id)
 
 def get_bonus_list(tokens: dict, family_id: str, parent_subs_id: str):
     path = "gamification/api/v8/family-hub/bonus/list"
@@ -107,7 +92,7 @@ def get_bonus_list(tokens: dict, family_id: str, parent_subs_id: str):
         "family_id": family_id,
         "parent_subs_id": parent_subs_id
     }
-    return post_circle(tokens, path, payload, package_code=family_id, token_confirmation=parent_subs_id)
+    return post_circle(tokens, path, payload, package_code=family_id, token_payment=parent_subs_id)
 
 def get_package_detail_circle(tokens: dict, package_option_code: str):
     path = "api/v8/xl-stores/options/detail"
@@ -125,7 +110,7 @@ def get_package_detail_circle(tokens: dict, package_option_code: str):
         "package_option_code": package_option_code,
         "package_variant_code": ""
     }
-    return post_circle(tokens, path, payload, package_code=package_option_code, token_confirmation="detail")
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="detail")
 
 def get_addons_circle(tokens: dict, package_option_code: str):
     path = "api/v8/xl-stores/options/addons-pinky-box"
@@ -134,7 +119,7 @@ def get_addons_circle(tokens: dict, package_option_code: str):
         "lang": "id",
         "package_option_code": package_option_code
     }
-    return post_circle(tokens, path, payload, package_code=package_option_code, token_confirmation="addons")
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="addons")
 
 def get_intercept_page(tokens: dict, package_option_code: str):
     path = "misc/api/v8/utility/intercept-page"
@@ -143,7 +128,7 @@ def get_intercept_page(tokens: dict, package_option_code: str):
         "lang": "id",
         "package_option_code": package_option_code
     }
-    return post_circle(tokens, path, payload, package_code=package_option_code, token_confirmation="intercept")
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="intercept")
 
 def get_payment_methods_option(tokens: dict, package_option_code: str, token_confirmation: str):
     path = "payments/api/v8/payment-methods-option"
@@ -155,4 +140,4 @@ def get_payment_methods_option(tokens: dict, package_option_code: str, token_con
         "payment_type": "FAMILY_HUB_MEMBER",
         "token_confirmation": token_confirmation
     }
-    return post_circle(tokens, path, payload, package_code=package_option_code, token_confirmation=token_confirmation)
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment=token_confirmation)
