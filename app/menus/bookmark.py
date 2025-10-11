@@ -1,9 +1,9 @@
 from app.client.engsel import get_family, get_package_details
+from app.menus.package import show_package_details
 from app.service.auth import AuthInstance
 from app.menus.util import clear_screen, pause
 from app.menus.util_helper import print_panel
 from app.service.bookmark import BookmarkInstance
-from app.client.engsel import get_family, show_package_details
 from app.config.theme_config import get_theme
 from rich.console import Console
 from rich.panel import Panel
