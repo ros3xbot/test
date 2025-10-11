@@ -157,7 +157,6 @@ def show_bundle_menu():
         nav.add_row("4", "Hapus Item dari Keranjang")
         if cart_items:
             nav.add_row("5", "💳 Lanjutkan ke Pembayaran")
-        nav.add_row("6", "Tambah dari Menu Family Interaktif")
         nav.add_row("00", "↩️ Kembali ke Menu Utama")
 
         console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
@@ -183,8 +182,13 @@ def show_bundle_menu():
             if detail: add_to_cart(detail, name)
 
         elif choice == "2":
-            detail, name = get_package_from_family_bookmark()
-            if detail: add_to_cart(detail, name)
+            result = show_family_menu(return_package_detail=True)
+            if result == "MAIN":
+                break
+            elif isinstance(result, tuple):
+                detail, name = result
+                if detail:
+                    add_to_cart(detail, name)
 
         elif choice == "3":
             fc = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
@@ -248,16 +252,6 @@ def show_bundle_menu():
 
             console.input(f"[{theme['text_sub']}]✅ Pembayaran selesai. Tekan Enter untuk kembali...[/{theme['text_sub']}]")
             break
-
-        elif choice == "6":
-            result = show_family_menu(return_package_detail=True)
-            if result == "MAIN":
-                break
-            elif isinstance(result, tuple):
-                detail, name = result
-                if detail:
-                    add_to_cart(detail, name)
-
 
         elif choice == "00":
             break
