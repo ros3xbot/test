@@ -1,10 +1,8 @@
 import json
 import uuid
 import requests
-
-from datetime import datetime, timezone
 from app.config.anu_config import BASE_API_URL, AX_DEVICE_ID, AX_FP_KEY, UA
-from app.client.engsel import send_api_request, BASE_API_URL, UA
+
 from app.client.encrypt import (
     API_KEY,
     build_encrypted_field,
