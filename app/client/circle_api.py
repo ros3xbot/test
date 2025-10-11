@@ -131,14 +131,24 @@ def get_intercept_page(tokens: dict, package_option_code: str):
     }
     return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="intercept")
 
-def get_payment_methods_option(tokens: dict, package_option_code: str, token_confirmation: str):
-    path = "payments/api/v8/payment-methods-option"
-    payload = {
-        "is_enterprise": False,
-        "is_referral": False,
-        "lang": "id",
-        "payment_target": package_option_code,
-        "payment_type": "FAMILY_HUB_MEMBER",
-        "token_confirmation": token_confirmation
-    }
-    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment=token_confirmation)
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import base64
+
+def get_x_signature_payment(
+    api_key: str,
+    access_token: str,
+    sig_time_sec: int,
+    package_code: str,
+    token_payment: str,
+    payment_method: str,
+    payment_for: str,
+    path: str,
+) -> str:
+    key = os.getenv("AES_KEY_ASCII").encode("ascii")  # 16-byte key
+    iv = b"\x00" * 16
+    raw = f"{package_code}|{token_payment}|{payment_method}|{payment_for}|{sig_time_sec}|{path}|{access_token}"
+    pt = pad(raw.encode("utf-8"), AES.block_size)
+    ct = AES.new(key, AES.MODE_CBC, iv).encrypt(pt)
+    return base64.b64encode(ct).decode("ascii")
+
