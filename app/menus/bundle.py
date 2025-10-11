@@ -151,10 +151,10 @@ def show_bundle_menu():
         nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
         nav.add_column(justify="right", style=theme["text_key"], width=6)
         nav.add_column(style=theme["text_body"])
-        nav.add_row("1", "➕ Tambah dari Bookmark")
-        nav.add_row("2", "➕ Tambah dari Bookmark Family Code")
-        nav.add_row("3", "➕ Tambah dari Family Code Manual")
-        nav.add_row("4", "🗑️ Hapus Item dari Keranjang")
+        nav.add_row("1", "Tambah dari Bookmark")
+        nav.add_row("2", "Tambah dari Family Code Tersimpan")
+        nav.add_row("3", "Tambah dari Family Code Manual")
+        nav.add_row("4", "Hapus Item dari Keranjang")
         if cart_items:
             nav.add_row("5", "💳 Lanjutkan ke Pembayaran")
         nav.add_row("00", "↩️ Kembali ke Menu Utama")
@@ -182,7 +182,7 @@ def show_bundle_menu():
             if detail: add_to_cart(detail, name)
 
         elif choice == "2":
-            detail, name = get_package_from_family_bookmark()
+            detail, name = show_family_menu()
             if detail: add_to_cart(detail, name)
 
         elif choice == "3":
