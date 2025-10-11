@@ -67,7 +67,7 @@ def edit_family_name(index, new_name):
         return True
     return False
 
-def show_family_menu():
+def show_family_menu(return_package_detail: bool = False):
     while True:
         clear_screen()
         semua_kode = list_family_codes()
@@ -120,10 +120,7 @@ def show_family_menu():
             code = console.input("Masukkan family code: ").strip()
             name = console.input("Masukkan nama family: ").strip()
             success = add_family_code(code, name)
-            if success:
-                print_panel("✅ Info", "Berhasil menambahkan family code.")
-            else:
-                print_panel("❌ Error", "Family code sudah ada atau input tidak valid.")
+            print_panel("✅ Info" if success else "❌ Error", "Berhasil menambahkan." if success else "Gagal menambahkan.")
             pause()
 
         elif aksi == "h":
@@ -132,21 +129,18 @@ def show_family_menu():
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin dihapus: ").strip()
-            if not idx.isdigit() or not (1 <= int(idx) <= len(semua_kode)):
-                print_panel("❌ Error", "Nomor tidak ditemukan.")
-            else:
+            if idx.isdigit() and 1 <= int(idx) <= len(semua_kode):
                 index = int(idx) - 1
                 nama = semua_kode[index]["name"]
                 kode = semua_kode[index]["code"]
                 konfirmasi = console.input(f"Yakin ingin menghapus '{nama}' ({kode})? (y/n): ").strip().lower()
                 if konfirmasi == "y":
                     removed = remove_family_code(index)
-                    if removed:
-                        print_panel("✅ Info", f"Berhasil menghapus {removed}.")
-                    else:
-                        print_panel("❌ Error", "Gagal menghapus kode.")
+                    print_panel("✅ Info" if removed else "❌ Error", f"Berhasil menghapus {removed}." if removed else "Gagal menghapus.")
                 else:
                     print_panel("❎ Info", "Penghapusan dibatalkan.")
+            else:
+                print_panel("❌ Error", "Nomor tidak valid.")
             pause()
 
         elif aksi == "e":
@@ -155,35 +149,30 @@ def show_family_menu():
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin diubah namanya: ").strip()
-            if not idx.isdigit() or not (1 <= int(idx) <= len(semua_kode)):
-                print_panel("❌ Error", "Nomor tidak ditemukan.")
-            else:
+            if idx.isdigit() and 1 <= int(idx) <= len(semua_kode):
                 new_name = console.input("Masukkan nama baru: ").strip()
                 success = edit_family_name(int(idx) - 1, new_name)
-                if success:
-                    print_panel("✅ Info", "Nama berhasil diperbarui.")
-                else:
-                    print_panel("❌ Error", "Gagal memperbarui nama.")
+                print_panel("✅ Info" if success else "❌ Error", "Nama berhasil diperbarui." if success else "Gagal memperbarui nama.")
+            else:
+                print_panel("❌ Error", "Nomor tidak valid.")
             pause()
 
         elif aksi == "00":
-            #print_panel("🔄 Info", "Kembali ke menu utama...")
-            return
+            return None, None if return_package_detail else None
 
         elif aksi.isdigit():
             nomor = int(aksi)
             selected = next((p for p in packages if p["number"] == nomor), None)
             if selected:
                 try:
-                    result = get_packages_by_family(selected["code"])
-                    if result is None:
-                        continue
-                    elif result == "MAIN":
-                        return
+                    result = get_packages_by_family(selected["code"], return_package_detail=return_package_detail)
+                    if return_package_detail:
+                        return result if result else (None, None)
+                    if result == "MAIN":
+                        return None
                     elif result == "BACK":
                         continue
                     pause()
-
                 except Exception as e:
                     print_panel("❌ Error", f"Gagal menampilkan paket: {e}")
             else:
