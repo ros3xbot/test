@@ -28,7 +28,14 @@ def show_bundle_menu():
 
     while True:
         clear_screen()
-        console.print(Panel("🛒 Keranjang Paket Bundle", style=theme["border_info"], expand=True))
+        #console.print(Panel("🛒 Keranjang Paket Bundle", style=theme["border_info"], expand=True
+        console.print(Panel(
+            Align.center("🛒 Keranjang Paket Bundle", vertical="middle"),
+            border_style=theme["border_info"],
+            padding=(1, 2),
+            expand=True
+        ))
+
 
         if cart_items:
             table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
