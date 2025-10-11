@@ -1,6 +1,6 @@
 from app.service.auth import AuthInstance
 from app.service.bookmark import BookmarkInstance
-from app.service.family_bookmark import FamilyBookmarkInstance
+#from app.service.family_bookmark import FamilyBookmarkInstance
 from app.client.engsel import get_family, get_package, get_package_details
 from app.client.balance import settlement_balance
 from app.client.qris import show_qris_payment
@@ -78,47 +78,6 @@ def get_package_from_bookmark():
 
     name = f"{selected['family_name']} - {selected['variant_name']} - {selected['option_name']}"
     return detail, name
-
-
-def get_package_from_family_bookmark():
-    theme = get_theme()
-    clear_screen()
-    console.print(Panel("📌 Tambah Paket dari Bookmark Family Code", style=theme["border_info"], expand=True))
-
-    bookmarks = FamilyBookmarkInstance.get_bookmarks()
-    if not bookmarks:
-        print_panel("ℹ️ Info", "Tidak ada bookmark family code tersimpan.")
-        pause()
-        return None, None
-
-    table = Table(box=MINIMAL_DOUBLE_HEAD, expand=True)
-    table.add_column("No", justify="right", style=theme["text_key"], width=4)
-    table.add_column("Family", style=theme["text_body"])
-    table.add_column("Kode", style=theme["border_warning"])
-
-    for idx, bm in enumerate(bookmarks, start=1):
-        table.add_row(str(idx), bm["family_name"], bm["family_code"])
-
-    console.print(Panel(table, border_style=theme["border_primary"], padding=(0, 1), expand=True))
-
-    nav = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
-    nav.add_column(justify="right", style=theme["text_key"], width=6)
-    nav.add_column(style=theme["text_body"])
-    nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
-
-    console.print(Panel(nav, border_style=theme["border_info"], padding=(0, 1), expand=True))
-
-    choice = console.input(f"[{theme['text_sub']}]Pilih nomor family code:[/{theme['text_sub']}] ").strip()
-    if choice == "00":
-        return None, None
-
-    if not choice.isdigit() or not (1 <= int(choice) <= len(bookmarks)):
-        print_panel("⚠️ Error", "Pilihan tidak valid.")
-        pause()
-        return None, None
-
-    selected = bookmarks[int(choice) - 1]
-    return get_packages_by_family(selected["family_code"], return_package_detail=True)
 
 
 def show_bundle_menu():
