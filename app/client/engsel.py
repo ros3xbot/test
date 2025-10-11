@@ -252,7 +252,9 @@ def get_balance(api_key: str, id_token: str) -> dict:
         return res["data"]["balance"]
     else:
         print_panel("⚠️ Error", res.get("error", "Gagal mengambil saldo."))
-        return None
+        #return None
+        return {}
+
 
 
 def get_family(
