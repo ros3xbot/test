@@ -250,9 +250,13 @@ def show_bundle_menu():
             break
 
         elif choice == "6":
-            detail, name = show_family_menu(return_package_detail=True)
-            if detail:
-                add_to_cart(detail, name)
+            result = show_family_menu(return_package_detail=True)
+            if result == "MAIN":
+                break
+            elif isinstance(result, tuple):
+                detail, name = result
+                if detail:
+                    add_to_cart(detail, name)
 
 
         elif choice == "00":
