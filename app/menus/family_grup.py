@@ -166,13 +166,24 @@ def show_family_menu(return_package_detail: bool = False):
             if selected:
                 try:
                     result = get_packages_by_family(selected["code"], return_package_detail=return_package_detail)
+                    #if return_package_detail:
+                    #    return result if result else (None, None)
+                    #if result == "MAIN":
+                    #    return None
+                    #elif result == "BACK":
+                    #    continue
+                   # pause()
+
                     if return_package_detail:
-                        return result if result else (None, None)
-                    if result == "MAIN":
-                        return None
-                    elif result == "BACK":
-                        continue
-                    pause()
+                        if isinstance(result, tuple):
+                            return result
+                        elif result == "MAIN":
+                            return None, None
+                        elif result == "BACK":
+                            return None, None
+                        else:
+                            return None, None
+
                 except Exception as e:
                     print_panel("❌ Error", f"Gagal menampilkan paket: {e}")
             else:
