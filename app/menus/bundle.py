@@ -190,7 +190,7 @@ def show_bundle_menu():
             result = get_packages_by_family(fc, return_package_detail=True)
             if result:
                 detail, name = result
-                detail: add_to_cart(detail, name)
+                add_to_cart(detail, name)
 
         elif choice == "4" and cart_items:
             idx = console.input(f"[{theme['text_sub']}]Nomor item yang ingin dihapus:[/{theme['text_sub']}] ").strip()
