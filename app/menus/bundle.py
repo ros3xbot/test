@@ -1,8 +1,8 @@
 import json
 from app.client.balance import settlement_balance
 from app.client.engsel import get_family, get_package, get_package_details
-from app.client.ewallet import show_multipayment_v2
-from app.client.qris import show_qris_payment_v2
+from app.client.ewallet import show_multipayment
+from app.client.qris import show_qris_payment
 from app.menus.package import get_packages_by_family
 from app.menus.util import clear_screen, pause, print_header, Style
 from app.service.auth import AuthInstance
