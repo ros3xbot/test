@@ -18,7 +18,7 @@ from app.menus.theme import show_theme_menu
 from app.config.theme_config import get_theme
 from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
-#from app.service.circle import show_circle_menu
+from app.service.circle import show_circle_menu
 
 from rich.console import Console
 from rich.table import Table
@@ -163,7 +163,7 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("6", "🔥 Beli Paket Hot Promo-2")
     menu_table.add_row("7", "🔍 Beli Paket Berdasarkan Family Code")
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
-    #menu_table.add_row("9", "🐒 XL CIRCLE")
+    menu_table.add_row("9", "🐒 XL CIRCLE")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     menu_table.add_row("", "")
     menu_table.add_row("77", f"[{theme['border_warning']}]📢 Info Unlock Code [/]")  
@@ -235,8 +235,8 @@ def main():
             case "8":
                 show_family_menu()
 
-            # case "9":
-                # show_circle_menu()
+            case "9":
+                show_circle_menu()
 
             case "00":
                 show_bookmark_menu()
