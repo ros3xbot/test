@@ -9,7 +9,7 @@ from app.menus.util import clear_screen, pause
 from app.menus.util_helper import print_panel, get_rupiah
 from app.config.theme_config import get_theme
 from app.menus.package import get_packages_by_family
-from app.service.family_bookmark import FamilyBookmarkInstance
+
 from app.type_dict import PaymentItem
 from rich.console import Console
 from rich.panel import Panel
@@ -182,7 +182,7 @@ def show_bundle_menu():
             if detail: add_to_cart(detail, name)
 
         elif choice == "2":
-            detail, name = show_family_menu()
+            detail, name = get_package_from_family_bookmark()
             if detail: add_to_cart(detail, name)
 
         elif choice == "3":
