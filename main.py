@@ -18,7 +18,7 @@ from app.menus.theme import show_theme_menu
 from app.config.theme_config import get_theme
 from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
-from app.service.circle import show_circle_menu
+from app.menus.circle import show_circle_menu
 
 from rich.console import Console
 from rich.table import Table
