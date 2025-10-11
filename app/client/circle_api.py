@@ -3,11 +3,12 @@ import requests
 import uuid
 import json
 from datetime import datetime, timezone
-from app.client.encrypt import decrypt_xdata, java_like_timestamp, get_x_signature_payment
-
-BASE_API_URL = os.getenv("BASE_API_URL")
-API_KEY = os.getenv("API_KEY")
-UA = os.getenv("UA")
+#from app.client.encrypt import decrypt_xdata, java_like_timestamp, get_x_signature_payment
+from app.client.engsel import send_api_request, BASE_API_URL, API_KEY, UA, java_like_timestamp
+from app.client.encrypt import encryptsign_xdata, decrypt_xdata, get_x_signature_payment
+#BASE_API_URL = os.getenv("BASE_API_URL")
+#API_KEY = os.getenv("API_KEY")
+#UA = os.getenv("UA")
 
 def build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at: datetime) -> dict:
     return {
