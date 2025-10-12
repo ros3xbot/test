@@ -2,7 +2,7 @@ import random
 import sys
 import time
 from datetime import datetime
-from app.menus.util import pause
+from app.menus.util import pause, clear_sc
 from app.menus.util_helper import print_panel, get_rupiah, clear_screen
 from app.client.engsel import get_balance, get_profile, get_quota
 from app.client.engsel2 import get_tiering_info, segments
@@ -18,7 +18,7 @@ from app.menus.theme import show_theme_menu
 from app.config.theme_config import get_theme
 from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
-from app.menus.circle import show_circle_menu
+#from app.menus.circle import show_circle_menu
 from app.menus.bundle import show_bundle_menu
 from app.menus.purchase import purchase_by_family
 from rich.console import Console
@@ -165,11 +165,12 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("6", "🔥 Beli Paket Hot Promo-2")
     menu_table.add_row("7", "🔍 Beli Paket Berdasarkan Family Code")
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
-    menu_table.add_row("9", "🛒 Beli Paket Bundle")
-    menu_table.add_row("10", "🛒 Beli semua paket dalam family code")
+    menu_table.add_row("", "")
+    menu_table.add_row("9", "🛒 Beli/Buat Paket Bundle")
+    menu_table.add_row("10", "🛒 Beli Semua Paket di Family Code")
     menu_table.add_row("00", "⭐ Bookmark Paket")
-    menu_table.add_row("11", "🐒 XL CIRCLE")
-    #menu_table.add_row("", "")
+    #menu_table.add_row("11", "🐒 XL CIRCLE")
+    menu_table.add_row("", "")
     menu_table.add_row("77", f"[{theme['border_warning']}]📢 Info Unlock Code [/]")  
     menu_table.add_row("88", f"[{theme['text_sub']}]🎨 Ganti Tema CLI [/]")          
     menu_table.add_row("99", f"[{theme['text_err']}]⛔ Tutup aplikasi [/]")
@@ -243,15 +244,15 @@ def main():
                 show_bundle_menu()
 
             case "10":
-                clear_screen()
+                clear_sc()
                 console.print(Panel(
-                    Align.center("🛒 Beli Semua Paket dalam Family Code", vertical="middle"),
+                    Align.center("🛒 Beli Semua Paket Yang ada di Family Code", vertical="middle"),
                     border_style=theme["border_info"],
                     padding=(1, 2),
                     expand=True
                 ))
 
-                family_code = console.input(f"[{theme['text_sub']}]Masukkan Family Code (atau '99' untuk batal):[/{theme['text_sub']}] ").strip()
+                family_code = console.input(f"[{theme['text_sub']}]Masukkan Family Code:[/{theme['text_sub']}] ").strip()
                 if not family_code or family_code == "99":
                     print_panel("ℹ️ Info", "Pembelian dibatalkan.")
                     pause()
