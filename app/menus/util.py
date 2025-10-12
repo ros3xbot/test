@@ -91,11 +91,6 @@ def display_html(html_text, width=80):
     parser.feed(html_text)
     return parser.get_text()
 
-#def print_banner():
- #   theme = get_theme()
- #   banner_text = Align.center("[bold]myXL CLI v8.8.0 gen.1[/]", vertical="middle")
- #   console.print(Panel(banner_text, border_style=theme["border_primary"], style=theme["text_title"], padding=(1, 2), expand=True))
- #   show_simple_number_panel()
 
 def show_simple_number_panel():
     theme = get_theme()
@@ -110,23 +105,6 @@ def show_simple_number_panel():
         padding=(0, 0),
         expand=True
     ))
-
-
-def show_simple_number_panelx():
-    theme = get_theme()
-    active_user = AuthInstance.get_active_user()
-    if not active_user:
-        print_panel("⚠️ Tidak ada akun aktif", "Silakan login terlebih dahulu.")
-        pause()
-        return
-
-    number = active_user.get("number", "-")
-    info_table = Table.grid(padding=(0, 0))
-    info_table.add_column(justify="left", style=theme["text_body"])
-    info_table.add_column(justify="left", style=theme["text_body"])
-    info_table.add_row("Akun yang sedang aktif atau digunakan", f"[bold {theme['text_body']}]✨{number}✨[/]")
-
-    console.print(Panel(info_table, border_style=theme["border_warning"], padding=(0, 1), expand=True))
 
 def render_account_info_panel(api_key, tokens):
     theme = get_theme()
