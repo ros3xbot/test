@@ -1,18 +1,18 @@
 import requests
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich.console import Console
+from rich.box import MINIMAL_DOUBLE_HEAD
 from app.client.engsel import get_family, get_package_details
-from app.menus.util import pause, clear_screen
-from app.menus.util_helper import print_panel, get_rupiah
+from app.menus.util import pause
 from app.service.auth import AuthInstance
 from app.type_dict import PaymentItem
 from app.client.balance import settlement_balance
 from app.config.theme_config import get_theme
 
-from rich.table import Table
-from rich.panel import Panel
-from rich.align import Align
-from rich.console import Console
-
 console = Console()
+theme = get_theme()
 
 def purchase_by_family(
     family_code: str,
@@ -21,157 +21,153 @@ def purchase_by_family(
     token_confirmation_idx: int = 0,
 ):
     api_key = AuthInstance.api_key
-    tokens = AuthInstance.get_active_tokens() or {}
-    theme = get_theme()
+    tokens: dict = AuthInstance.get_active_tokens() or {}
 
-    clear_screen()
-    console.print(Panel(
-        Align.center(f"🛒 Pembelian Paket Dari Family: {family_code}", vertical="middle"),
-        border_style=theme["border_info"],
-        padding=(1, 2),
-        expand=True
-    ))
-
-    decoy_package_detail = None
+    # Decoy setup
     if use_decoy:
-        try:
-            response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
-            decoy_data = response.json()
-            decoy_package_detail = get_package_details(
-                api_key,
-                tokens,
-                decoy_data["family_code"],
-                decoy_data["variant_code"],
-                decoy_data["order"],
-                decoy_data["is_enterprise"],
-                decoy_data["migration_type"],
-            )
-            if not decoy_package_detail or "package_option" not in decoy_package_detail:
-                raise ValueError("Detail decoy tidak valid.")
-            threshold = decoy_package_detail["package_option"]["price"]
-            print_panel("⚠️ Konfirmasi", f"Pastikan sisa balance KURANG DARI Rp{threshold} sebelum lanjut.")
-            confirm = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian? (y/n):[/{theme['text_sub']}] ").strip().lower()
-            if confirm != "y":
-                print_panel("ℹ️ Info", "Pembelian dibatalkan oleh pengguna.")
-                pause()
-                return None
-        except Exception as e:
-            print_panel("⚠️ Error", f"Gagal mengambil data decoy: {e}")
+        url = "https://me.mashu.lol/pg-decoy-xcp.json"
+        response = requests.get(url, timeout=30)
+        if response.status_code != 200:
+            console.print(Panel("Gagal mengambil data decoy package.", border_style=theme["border_error"]))
             pause()
             return None
 
+        decoy_data = response.json()
+        decoy_package_detail = get_package_details(
+            api_key,
+            tokens,
+            decoy_data["family_code"],
+            decoy_data["variant_code"],
+            decoy_data["order"],
+            decoy_data["is_enterprise"],
+            decoy_data["migration_type"],
+        )
+
+        balance_treshold = decoy_package_detail["package_option"]["price"]
+        console.print(Panel(f"⚠️ Pastikan sisa balance KURANG DARI Rp {balance_treshold:,}", border_style=theme["border_warning"]))
+        balance_answer = console.input(f"[{theme['text_sub']}]Apakah anda yakin ingin melanjutkan pembelian? (y/n): [/{theme['text_sub']}] ").strip()
+        if balance_answer.lower() != "y":
+            console.print(Panel("❌ Pembelian dibatalkan oleh user.", border_style=theme["border_error"]))
+            pause()
+            return None
+
+    # Ambil data family
     family_data = get_family(api_key, tokens, family_code)
     if not family_data:
-        print_panel("⚠️ Error", f"Gagal mengambil data family: {family_code}")
+        console.print(Panel(f"❌ Gagal mengambil data family: {family_code}", border_style=theme["border_error"]))
         pause()
         return None
 
     family_name = family_data["package_family"]["name"]
     variants = family_data["package_variants"]
 
-    total_packages = sum(len(v["package_options"]) for v in variants)
+    console.rule(f"[bold {theme['text_title']}]📦 Memulai Pembelian Paket Family: {family_name}[/]")
+
     successful_purchases = []
+    packages_count = sum(len(v["package_options"]) for v in variants)
     purchase_count = 0
 
     for variant in variants:
         variant_name = variant["name"]
         for option in variant["package_options"]:
-            purchase_count += 1
+            tokens = AuthInstance.get_active_tokens()
             option_name = option["name"]
             option_order = option["order"]
             option_price = option["price"]
+            purchase_count += 1
 
             console.print(Panel(
-                f"[bold]{variant_name}[/] - {option_order}. {option_name}\nHarga: Rp {get_rupiah(option_price)}",
-                title=f"[{theme['text_title']}]Pembelian {purchase_count} dari {total_packages}[/]",
-                border_style=theme["border_primary"],
-                padding=(1, 2),
-                expand=True
+                f"🔄 Purchase {purchase_count} of {packages_count}\n🛒 {variant_name} - {option_order}. {option_name} - Rp {option_price:,}",
+                border_style=theme["border_info"]
             ))
 
             try:
+                if use_decoy:
+                    decoy_package_detail = get_package_details(
+                        api_key,
+                        tokens,
+                        decoy_data["family_code"],
+                        decoy_data["variant_code"],
+                        decoy_data["order"],
+                        decoy_data["is_enterprise"],
+                        decoy_data["migration_type"],
+                    )
+
                 target_package_detail = get_package_details(
                     api_key,
                     tokens,
                     family_code,
                     variant["package_variant_code"],
-                    option_order,
+                    option["order"],
                     None,
                     None,
                 )
-                if not target_package_detail or "package_option" not in target_package_detail:
-                    raise ValueError("Detail paket tidak ditemukan.")
             except Exception as e:
-                print_panel("⚠️ Error", f"Gagal mengambil detail paket: {e}")
+                console.print(Panel(
+                    f"❌ Gagal ambil detail paket: {variant_name} - {option_name}\n{e}",
+                    border_style=theme["border_error"]
+                ))
                 continue
 
-            payment_items: list[PaymentItem] = []
-
-            try:
-                payment_items.append(PaymentItem(
+            payment_items = [
+                PaymentItem(
                     item_code=target_package_detail["package_option"]["package_option_code"],
                     product_type="",
                     item_price=target_package_detail["package_option"]["price"],
-                    item_name=f"{option_order}. {target_package_detail['package_option']['name']}",
+                    item_name=str(option_order) + target_package_detail["package_option"]["name"],
                     tax=0,
                     token_confirmation=target_package_detail["token_confirmation"],
-                ))
+                )
+            ]
 
-                if use_decoy and decoy_package_detail:
-                    payment_items.append(PaymentItem(
+            if use_decoy:
+                payment_items.append(
+                    PaymentItem(
                         item_code=decoy_package_detail["package_option"]["package_option_code"],
                         product_type="",
                         item_price=decoy_package_detail["package_option"]["price"],
-                        item_name=f"{option_order}. {decoy_package_detail['package_option']['name']}",
+                        item_name=str(option_order) + decoy_package_detail["package_option"]["name"],
                         tax=0,
                         token_confirmation=decoy_package_detail["token_confirmation"],
-                    ))
-            except Exception as e:
-                print_panel("⚠️ Error", f"Gagal membentuk item pembayaran: {e}")
-                continue
+                    )
+                )
 
-            try:
-                overwrite_amount = sum(item.item_price for item in payment_items)
-            except Exception as e:
-                print_panel("⚠️ Error", f"Gagal menghitung total harga: {e}")
-                continue
+            overwrite_amount = target_package_detail["package_option"]["price"]
+            if use_decoy:
+                overwrite_amount += decoy_package_detail["package_option"]["price"]
 
             try:
                 res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
                 if res and res.get("status", "") != "SUCCESS":
-                    msg = res.get("message", "")
-                    if "Bizz-err.Amount.Total" in msg:
-                        try:
-                            valid_amount = int(msg.split("=")[1].strip())
-                            res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
-                        except Exception as e:
-                            print_panel("⚠️ Error", f"Gagal retry dengan jumlah valid: {e}")
-                            continue
+                    error_msg = res.get("message", "Unknown error")
+                    if "Bizz-err.Amount.Total" in error_msg:
+                        valid_amount = int(error_msg.split("=")[1].strip())
+                        console.print(f"🔁 Adjusted total amount to: Rp {valid_amount:,}")
+                        res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
 
                 if res and res.get("status", "") == "SUCCESS":
-                    successful_purchases.append(f"{variant_name}|{option_order}. {option_name} - {option_price}")
-                    print_panel("✅ Sukses", f"Paket berhasil dibeli: {option_name}")
+                    successful_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,}")
+                    console.print(Panel("✅ Purchase successful!", border_style=theme["border_success"]))
                     if pause_on_success:
                         pause()
                 else:
-                    print_panel("⚠️ Gagal", f"Gagal membeli paket: {option_name}")
+                    successful_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,}")
+                    console.print(Panel("✅ Purchase successful!", border_style=theme["border_success"]))
+                    if pause_on_success:
+                        pause()
             except Exception as e:
-                print_panel("⚠️ Error", f"Exception saat pembelian: {e}")
-            console.print("")
+                console.print(Panel(f"❌ Error saat pembelian: {e}", border_style=theme["border_error"]))
 
-    console.print(Panel(
-        f"Total pembelian sukses untuk family [bold]{family_name}[/]: {len(successful_purchases)}",
-        border_style=theme["border_success"],
-        padding=(1, 2),
-        expand=True
-    ))
+            console.rule()
 
+    # Ringkasan
+    console.print(Panel(f"📦 Total pembelian sukses untuk [bold]{family_name}[/]: {len(successful_purchases)}", border_style=theme["border_success"]))
     if successful_purchases:
-        table = Table(title="📦 Paket yang berhasil dibeli", box=MINIMAL_DOUBLE_HEAD, expand=True)
-        table.add_column("No", justify="right", style=theme["text_key"], width=4)
-        table.add_column("Detail Paket", style=theme["text_body"])
-        for i, item in enumerate(successful_purchases, start=1):
-            table.add_row(str(i), item)
+        table = Table(title="✅ Paket Berhasil Dibeli", box=MINIMAL_DOUBLE_HEAD, expand=True)
+        table.add_column("Detail", style=theme["text_body"])
+        for item in successful_purchases:
+            table.add_row(item)
         console.print(table)
 
+    console.rule("[dim]Selesai[/]")
     pause()
