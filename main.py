@@ -20,6 +20,7 @@ from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
 from app.menus.circle import show_circle_menu
 from app.menus.bundle import show_bundle_menu
+from app.menus.purchase import purchase_by_family
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -164,6 +165,7 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("7", "🔍 Beli Paket Berdasarkan Family Code")
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
     menu_table.add_row("9", "🛒 Beli Paket Bundle")
+    menu_table.add_row("10", "🛒 Beli semua paket dalam family code")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     menu_table.add_row("11", "🐒 XL CIRCLE")
     #menu_table.add_row("", "")
@@ -238,6 +240,13 @@ def main():
 
             case "9":
                 show_bundle_menu()
+
+            case "10":
+                family_code = input("Enter family code (or '99' to cancel): ")
+                if family_code == "99":
+                    continue
+                use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
+                purchase_by_family(family_code, use_decoy)
 
             case "00":
                 show_bookmark_menu()
