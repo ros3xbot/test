@@ -70,7 +70,7 @@ def show_account_menu():
     active_user = AuthInstance.get_active_user()
 
     border_set = 2
-    name_set = "@barbex"
+    name_set = "*6969#"
     unlock_data = load_unlock_status()
     is_unlocked = unlock_data.get("is_unlocked", False)
 
