@@ -242,12 +242,49 @@ def main():
                 show_bundle_menu()
 
             case "10":
-                family_code = input("Enter family code (or '99' to cancel): ")
-                if family_code == "99":
+                clear_screen()
+                console.print(Panel(
+                    Align.center("🛒 Beli Semua Paket dalam Family Code", vertical="middle"),
+                    border_style=theme["border_info"],
+                    padding=(1, 2),
+                    expand=True
+                ))
+
+                family_code = console.input(f"[{theme['text_sub']}]Masukkan Family Code (atau '99' untuk batal):[/{theme['text_sub']}] ").strip()
+                if not family_code or family_code == "99":
+                    print_panel("ℹ️ Info", "Pembelian dibatalkan.")
+                    pause()
                     continue
-                use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
-                pause_on_success = input("Pause on each successful purchase? (y/n): ").lower() == 'y'
+
+                use_decoy_input = console.input(f"[{theme['text_sub']}]Gunakan paket decoy? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                use_decoy = use_decoy_input == "y"
+
+                pause_input = console.input(f"[{theme['text_sub']}]Pause setiap pembelian sukses? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                pause_on_success = pause_input == "y"
+
+                confirm_text = Text()
+                confirm_text.append(f"Family Code: [bold]{family_code}[/]\n", style=theme["text_body"])
+                confirm_text.append(f"Gunakan Decoy: {'Ya' if use_decoy else 'Tidak'}\n", style=theme["text_body"])
+                confirm_text.append(f"Pause per pembelian: {'Ya' if pause_on_success else 'Tidak'}\n", style=theme["text_body"])
+                confirm_text.append("\nLanjutkan pembelian semua paket dalam family code ini?", style=theme["text_sub"])
+
+                console.print(Panel(confirm_text, title="📦 Konfirmasi", border_style=theme["border_warning"], padding=(1, 2), expand=True))
+                lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                if lanjut != "y":
+                    print_panel("ℹ️ Info", "Pembelian dibatalkan.")
+                    pause()
+                    continue
+
                 purchase_by_family(family_code, use_decoy, pause_on_success)
+
+
+            #case "10":
+            #    family_code = input("Enter family code (or '99' to cancel): ")
+            #    if family_code == "99":
+            #        continue
+            #    use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
+            #    pause_on_success = input("Pause on each successful purchase? (y/n): ").lower() == 'y'
+            #    purchase_by_family(family_code, use_decoy, pause_on_success)
 
             case "00":
                 show_bookmark_menu()
