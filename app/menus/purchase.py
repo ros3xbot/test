@@ -105,29 +105,30 @@ def purchase_by_family(
                 print_panel("⚠️ Error", f"Gagal mengambil detail paket: {e}")
                 continue
 
-            payment_items = [
-                PaymentItem(
-                    item_code=target_package_detail["package_option"]["package_option_code"],
-                    product_type="",
-                    item_price=target_package_detail["package_option"]["price"],
-                    item_name=f"{option_order}. {target_package_detail['package_option']['name']}",
-                    tax=0,
-                    token_confirmation=target_package_detail["token_confirmation"],
-                )
-            ]
+            payment_items = []
 
+            # Paket utama
+            payment_items.append(PaymentItem(
+                item_code=target_package_detail["package_option"]["package_option_code"],
+                product_type="",
+                item_price=target_package_detail["package_option"]["price"],
+                item_name=f"{option_order}. {target_package_detail['package_option']['name']}",
+                tax=0,
+                token_confirmation=target_package_detail["token_confirmation"],
+            ))
+
+            # Tambahkan decoy jika dipilih
             if use_decoy and decoy_package_detail:
-                payment_items.append(
-                    PaymentItem(
-                        item_code=decoy_package_detail["package_option"]["package_option_code"],
-                        product_type="",
-                        item_price=decoy_package_detail["package_option"]["price"],
-                        item_name=f"{option_order}. {decoy_package_detail['package_option']['name']}",
-                        tax=0,
-                        token_confirmation=decoy_package_detail["token_confirmation"],
-                    )
-                )
+                payment_items.append(PaymentItem(
+                    item_code=decoy_package_detail["package_option"]["package_option_code"],
+                    product_type="",
+                    item_price=decoy_package_detail["package_option"]["price"],
+                    item_name=f"{option_order}. {decoy_package_detail['package_option']['name']}",
+                    tax=0,
+                    token_confirmation=decoy_package_detail["token_confirmation"],
+                ))
 
+            # Hitung total harga
             overwrite_amount = sum(item.item_price for item in payment_items)
 
             try:
