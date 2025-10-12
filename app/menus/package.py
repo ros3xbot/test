@@ -25,9 +25,9 @@ console = Console()
 
 def show_package_details(api_key, tokens, package_option_code, is_enterprise, option_order=-1):
     clear_screen()
+    theme = get_theme()
 
     package = get_package(api_key, tokens, package_option_code)
-    theme = get_theme()
     if not package:
         print_panel("⚠️ Error", "Gagal memuat detail paket.")
         pause()
@@ -39,12 +39,12 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
     price = option.get("price", 0)
     formatted_price = get_rupiah(price)
     validity = option.get("validity", "-")
-    detail = display_html(option.get("tnc", ""))
     point = option.get("point", "-")
     plan_type = family.get("plan_type", "-")
     payment_for = family.get("payment_for", "") or "BUY_PACKAGE"
     token_confirmation = package.get("token_confirmation", "")
     ts_to_sign = package.get("timestamp", "")
+    detail = display_html(option.get("tnc", ""))
 
     option_name = option.get("name", "")
     family_name = family.get("name", "")
@@ -112,26 +112,26 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
         console.print(Panel(benefit_table, title="🎁 Benefit Paket", border_style=theme["border_success"], padding=(0, 0), expand=True))
 
-    # Addons
+    # Addons (opsional)
     #addons = get_addons(api_key, tokens, package_option_code)
     #console.print(Panel(json.dumps(addons, indent=2), title="🧩 Addons", border_style=theme["border_info"], expand=True))
 
     # Syarat & Ketentuan
     console.print(Panel(detail, title="📜 Syarat & Ketentuan", border_style=theme["border_warning"], expand=True))
 
-    # Opsi Pembelian
+    # Navigasi Pembelian
     option_table = Table(show_header=False, box=MINIMAL_DOUBLE_HEAD, expand=True)
     option_table.add_column(justify="right", style=theme["text_key"], width=6)
     option_table.add_column(justify="left", style=theme["text_body"])
-    option_table.add_row("1", "Beli dengan Pulsa")
-    option_table.add_row("2", "Beli dengan E-Wallet")
-    option_table.add_row("3", "Bayar dengan QRIS")
+    option_table.add_row("1", "💰 Beli dengan Pulsa")
+    option_table.add_row("2", "💳 E-Wallet")
+    option_table.add_row("3", "📱 QRIS")
+    option_table.add_row("4", "💰 Pulsa + Decoy XCP")
     if payment_for == "REDEEM_VOUCHER":
-        option_table.add_row("4", "Ambil sebagai bonus")
-        option_table.add_row("5", "Beli dengan Poin")
+        option_table.add_row("5", "🎁 Ambil sebagai bonus")
+        option_table.add_row("6", "⭐ Beli dengan Poin")
     if option_order != -1:
-        option_table.add_row("0", "Tambah ke Bookmark")
-    #option_table.add_row("9", "Simulasi Pembelian dari d.json")
+        option_table.add_row("0", "🔖 Tambah ke Bookmark")
     option_table.add_row("00", f"[{theme['text_sub']}]Kembali ke daftar paket[/]")
     option_table.add_row("99", f"[{theme['text_err']}]Kembali ke menu utama[/]")
 
@@ -157,57 +157,85 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
             print_panel("✅ Info", msg)
             pause()
         elif choice == "1":
-            settlement_balance(api_key, tokens, payment_items, payment_for, True, amount_used="first")
+            settlement_balance(api_key, tokens, payment_items, payment_for, True)
             console.input("✅ Pembelian selesai. Tekan Enter untuk kembali.")
             return True
         elif choice == "2":
-            show_multipayment(api_key, tokens, payment_items, payment_for, True, amount_used="first")
+            show_multipayment(api_key, tokens, payment_items, payment_for, True)
             console.input("✅ Silahkan lakukan pembayaran. Tekan Enter untuk kembali.")
             return True
         elif choice == "3":
-            show_qris_payment(api_key, tokens, payment_items, payment_for, True, amount_used="first")
+            show_qris_payment(api_key, tokens, payment_items, payment_for, True)
             console.input("✅ Silahkan lakukan pembayaran. Tekan Enter untuk kembali.")
             return True
-        elif choice == "4" and payment_for == "REDEEM_VOUCHER":
-            settlement_bounty(api_key, tokens, token_confirmation, ts_to_sign, package_option_code, price, variant_name)
-            console.input("✅ Bonus berhasil diambil. Tekan Enter untuk kembali.")
-            return True
-        elif choice == "5" and payment_for == "REDEEM_VOUCHER":
-            settlement_loyalty(api_key, tokens, token_confirmation, ts_to_sign, package_option_code, price)
-            console.input("✅ Pembelian dengan poin selesai. Tekan Enter untuk kembali.")
-            return True
-        elif choice == "9":
+        elif choice == "4":
             try:
-                d = json.load(open("d.json", "r"))
-                d_id = 0
-                pd = get_package_details(
+                response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
+                decoy_data = response.json()
+                decoy_package_detail = get_package_details(
                     api_key,
                     tokens,
-                    d[d_id]["fc"],
-                    d[d_id]["vc"],
-                    d[d_id]["oo"],
-                    d[d_id]["ie"],
-                    d[d_id]["mt"],
+                    decoy_data["family_code"],
+                    decoy_data["variant_code"],
+                    decoy_data["order"],
+                    decoy_data["is_enterprise"],
+                    decoy_data["migration_type"],
                 )
-
-                payment_items.append(
-                    PaymentItem(
-                        item_code=pd["package_option"]["package_option_code"],
-                        product_type="",
-                        item_price=pd["package_option"]["price"],
-                        item_name=pd["package_option"]["name"],
-                        tax=0,
-                        token_confirmation=pd["token_confirmation"],
-                    )
-                )
-
-                show_qris_payment(api_key, tokens, payment_items, payment_for, True, amount_used="")
-                console.input("✅ Simulasi pembelian selesai. Tekan Enter untuk kembali.")
-            except Exception as e:
-                print_panel("⚠️ Error", f"Gagal melakukan simulasi: {e}")
+                payment_items.append(PaymentItem(
+                    item_code=decoy_package_detail["package_option"]["package_option_code"],
+                    product_type="",
+                    item_price=decoy_package_detail["package_option"]["price"],
+                    item_name=decoy_package_detail["package_option"]["name"],
+                    tax=0,
+                    token_confirmation=decoy_package_detail["token_confirmation"],
+                ))
+                overwrite_amount = price + decoy_package_detail["package_option"]["price"]
+                res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+                if res and res.get("status", "") != "SUCCESS":
+                    error_msg = res.get("message", "")
+                    if "Bizz-err.Amount.Total" in error_msg:
+                        valid_amount = int(error_msg.split("=")[1].strip())
+                        res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+                        if res and res.get("status", "") == "SUCCESS":
+                            print_panel("✅ Info", "Pembelian berhasil dengan jumlah yang disesuaikan.")
+                else:
+                    print_panel("✅ Info", "Pembelian berhasil.")
                 pause()
+                return True
+            except Exception as e:
+                print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
+                pause()
+                return "BACK"
+
+        elif choice == "5" and payment_for == "REDEEM_VOUCHER":
+            settlement_bounty(
+                api_key=api_key,
+                tokens=tokens,
+                token_confirmation=token_confirmation,
+                ts_to_sign=ts_to_sign,
+                payment_target=package_option_code,
+                price=price,
+                item_name=variant_name
+            )
+            console.input("✅ Bonus berhasil diambil. Tekan Enter untuk kembali.")
+            return True
+
+        elif choice == "6" and payment_for == "REDEEM_VOUCHER":
+            settlement_loyalty(
+                api_key=api_key,
+                tokens=tokens,
+                token_confirmation=token_confirmation,
+                ts_to_sign=ts_to_sign,
+                payment_target=package_option_code,
+                price=price,
+            )
+            console.input("✅ Pembelian dengan poin selesai. Tekan Enter untuk kembali.")
+            return True
+
         else:
             print_panel("⚠️ Error", "Pilihan tidak valid. Silakan pilih sesuai menu.")
+            pause()
+
 
 
 def get_packages_by_family(
