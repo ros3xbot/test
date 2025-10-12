@@ -1,11 +1,13 @@
+from random import randint
 import requests
+from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
-from rich.console import Console
 from rich.box import MINIMAL_DOUBLE_HEAD
+from rich.text import Text
+from rich.rule import Rule
 from app.client.engsel import get_family, get_package_details
-from app.menus.util import pause, clear_screen
+from app.menus.util import pause
 from app.service.auth import AuthInstance
 from app.type_dict import PaymentItem
 from app.client.balance import settlement_balance
@@ -14,7 +16,7 @@ from app.config.theme_config import get_theme
 console = Console()
 theme = get_theme()
 
-def purchase_by_family(
+def purchase_by_family_rich(
     family_code: str,
     use_decoy: bool,
     pause_on_success: bool = True,
@@ -30,7 +32,7 @@ def purchase_by_family(
         url = "https://me.mashu.lol/pg-decoy-xcp.json"
         response = requests.get(url, timeout=30)
         if response.status_code != 200:
-            console.print(Panel("Gagal mengambil data decoy package.", border_style=theme["border_error"]))
+            console.print(Panel("❌ Gagal mengambil data decoy package.", border_style=theme["border_error"]))
             pause()
             return None
 
@@ -46,7 +48,10 @@ def purchase_by_family(
         )
 
         balance_treshold = decoy_package_detail["package_option"]["price"]
-        console.print(Panel(f"⚠️ Pastikan sisa balance KURANG DARI Rp {balance_treshold:,}", border_style=theme["border_warning"]))
+        console.print(Panel(
+            f"⚠️ Pastikan sisa balance KURANG DARI Rp {balance_treshold:,}",
+            border_style=theme["border_warning"]
+        ))
         balance_answer = console.input(f"[{theme['text_sub']}]Apakah anda yakin ingin melanjutkan pembelian? (y/n):[/{theme['text_sub']}] ").strip()
         if balance_answer.lower() != "y":
             console.print(Panel("❌ Pembelian dibatalkan oleh user.", border_style=theme["border_error"]))
@@ -66,7 +71,6 @@ def purchase_by_family(
     console.rule(f"[bold {theme['text_title']}]📦 Memulai Pembelian Paket Family: {family_name}[/]")
 
     successful_purchases = []
-    failed_purchases = []
     packages_count = sum(len(v["package_options"]) for v in variants)
     purchase_count = 0
 
@@ -99,7 +103,6 @@ def purchase_by_family(
                     f"❌ Gagal ambil detail paket: {variant_name} - {option_name}\n{e}",
                     border_style=theme["border_error"]
                 ))
-                failed_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,} (error detail)")
                 continue
 
             payment_items = [
@@ -107,7 +110,7 @@ def purchase_by_family(
                     item_code=target_package_detail["package_option"]["package_option_code"],
                     product_type="",
                     item_price=target_package_detail["package_option"]["price"],
-                    item_name=str(option_order) + target_package_detail["package_option"]["name"],
+                    item_name=str(randint(1000, 9999)) + target_package_detail["package_option"]["name"],
                     tax=0,
                     token_confirmation=target_package_detail["token_confirmation"],
                 )
@@ -121,7 +124,7 @@ def purchase_by_family(
                         item_code=decoy_package_detail["package_option"]["package_option_code"],
                         product_type="",
                         item_price=decoy_package_detail["package_option"]["price"],
-                        item_name=str(option_order) + decoy_package_detail["package_option"]["name"],
+                        item_name=str(randint(1000, 9999)) + decoy_package_detail["package_option"]["name"],
                         tax=0,
                         token_confirmation=decoy_package_detail["token_confirmation"],
                     )
@@ -143,10 +146,8 @@ def purchase_by_family(
                     if pause_on_success:
                         pause()
                 else:
-                    failed_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,}")
                     console.print(Panel("❌ Purchase failed!", border_style=theme["border_error"]))
             except Exception as e:
-                failed_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,} (exception)")
                 console.print(Panel(f"❌ Error saat pembelian: {e}", border_style=theme["border_error"]))
 
             console.rule()
@@ -157,14 +158,6 @@ def purchase_by_family(
         table = Table(title="✅ Paket Berhasil Dibeli", box=MINIMAL_DOUBLE_HEAD, expand=True)
         table.add_column("Detail", style=theme["text_body"])
         for item in successful_purchases:
-            table.add_row(item)
-        console.print(table)
-
-    # Ringkasan gagal
-    if failed_purchases:
-        table = Table(title="❌ Paket Gagal Dibeli", box=MINIMAL_DOUBLE_HEAD, expand=True)
-        table.add_column("Detail", style=theme["text_err"])
-        for item in failed_purchases:
             table.add_row(item)
         console.print(table)
 
