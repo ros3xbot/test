@@ -245,8 +245,7 @@ def main():
                 family_code = input("Enter family code (or '99' to cancel): ")
                 if family_code == "99":
                     continue
-                #use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
-                #purchase_by_family(family_code, use_decoy)
+                use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
                 pause_on_success = input("Pause on each successful purchase? (y/n): ").lower() == 'y'
                 purchase_by_family(family_code, use_decoy, pause_on_success)
 
