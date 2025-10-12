@@ -26,7 +26,7 @@ def purchase_by_family(
 
     clear_screen()
     console.print(Panel(
-        Align.center(f"🛒 Pembelian Paket Family: {family_code}", vertical="middle"),
+        Align.center(f"🛒 Pembelian Paket Dari Family: {family_code}", vertical="middle"),
         border_style=theme["border_info"],
         padding=(1, 2),
         expand=True
@@ -124,7 +124,7 @@ def purchase_by_family(
                     )
                 )
 
-            overwrite_amount = sum(item.item_price for item in payment_items)
+            overwrite_amount = sum(item["item_price"] for item in payment_items)
 
             try:
                 res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
