@@ -47,7 +47,7 @@ def purchase_by_family(
 
         balance_treshold = decoy_package_detail["package_option"]["price"]
         console.print(Panel(f"⚠️ Pastikan sisa balance KURANG DARI Rp {balance_treshold:,}", border_style=theme["border_warning"]))
-        balance_answer = console.input(f"[{theme['text_sub']}]Apakah anda yakin ingin melanjutkan pembelian? (y/n): [/{theme['text_sub']}] ").strip()
+        balance_answer = console.input(f"[{theme['text_sub']}]Apakah anda yakin ingin melanjutkan pembelian? (y/n):[/{theme['text_sub']}] ").strip()
         if balance_answer.lower() != "y":
             console.print(Panel("❌ Pembelian dibatalkan oleh user.", border_style=theme["border_error"]))
             pause()
@@ -140,15 +140,14 @@ def purchase_by_family(
                 if res and res.get("status", "") == "SUCCESS":
                     successful_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,}")
                     console.print(Panel("✅ Purchase successful!", border_style=theme["border_success"]))
+                    if pause_on_success:
+                        pause()
                 else:
                     failed_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,}")
                     console.print(Panel("❌ Purchase failed!", border_style=theme["border_error"]))
             except Exception as e:
                 failed_purchases.append(f"{variant_name}|{option_order}. {option_name} - Rp {option_price:,} (exception)")
                 console.print(Panel(f"❌ Error saat pembelian: {e}", border_style=theme["border_error"]))
-
-            if pause_on_success:
-                pause()
 
             console.rule()
 
