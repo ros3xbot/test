@@ -16,7 +16,7 @@ from app.config.theme_config import get_theme
 console = Console()
 theme = get_theme()
 
-def purchase_by_family_rich(
+def purchase_by_family(
     family_code: str,
     use_decoy: bool,
     pause_on_success: bool = True,
