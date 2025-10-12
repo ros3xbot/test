@@ -10,6 +10,7 @@ from app.config.theme_config import get_theme
 from rich.table import Table
 from rich.panel import Panel
 from rich.align import Align
+from rich.console import Console
 
 console = Console()
 
