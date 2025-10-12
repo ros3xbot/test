@@ -26,6 +26,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.box import MINIMAL_DOUBLE_HEAD
 from rich.align import Align
+from rich.text import Text
 
 console = Console()
 theme = get_theme()
