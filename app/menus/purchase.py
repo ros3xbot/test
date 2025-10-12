@@ -105,39 +105,48 @@ def purchase_by_family(
                 print_panel("⚠️ Error", f"Gagal mengambil detail paket: {e}")
                 continue
 
-            payment_items = []
+            payment_items: list[PaymentItem] = []
 
-            # Paket utama
-            payment_items.append(PaymentItem(
-                item_code=target_package_detail["package_option"]["package_option_code"],
-                product_type="",
-                item_price=target_package_detail["package_option"]["price"],
-                item_name=f"{option_order}. {target_package_detail['package_option']['name']}",
-                tax=0,
-                token_confirmation=target_package_detail["token_confirmation"],
-            ))
-
-            # Tambahkan decoy jika dipilih
-            if use_decoy and decoy_package_detail:
+            try:
                 payment_items.append(PaymentItem(
-                    item_code=decoy_package_detail["package_option"]["package_option_code"],
+                    item_code=target_package_detail["package_option"]["package_option_code"],
                     product_type="",
-                    item_price=decoy_package_detail["package_option"]["price"],
-                    item_name=f"{option_order}. {decoy_package_detail['package_option']['name']}",
+                    item_price=target_package_detail["package_option"]["price"],
+                    item_name=f"{option_order}. {target_package_detail['package_option']['name']}",
                     tax=0,
-                    token_confirmation=decoy_package_detail["token_confirmation"],
+                    token_confirmation=target_package_detail["token_confirmation"],
                 ))
 
-            # Hitung total harga
-            overwrite_amount = sum(item.item_price for item in payment_items)
+                if use_decoy and decoy_package_detail:
+                    payment_items.append(PaymentItem(
+                        item_code=decoy_package_detail["package_option"]["package_option_code"],
+                        product_type="",
+                        item_price=decoy_package_detail["package_option"]["price"],
+                        item_name=f"{option_order}. {decoy_package_detail['package_option']['name']}",
+                        tax=0,
+                        token_confirmation=decoy_package_detail["token_confirmation"],
+                    ))
+            except Exception as e:
+                print_panel("⚠️ Error", f"Gagal membentuk item pembayaran: {e}")
+                continue
+
+            try:
+                overwrite_amount = sum(item.item_price for item in payment_items)
+            except Exception as e:
+                print_panel("⚠️ Error", f"Gagal menghitung total harga: {e}")
+                continue
 
             try:
                 res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
                 if res and res.get("status", "") != "SUCCESS":
                     msg = res.get("message", "")
                     if "Bizz-err.Amount.Total" in msg:
-                        valid_amount = int(msg.split("=")[1].strip())
-                        res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+                        try:
+                            valid_amount = int(msg.split("=")[1].strip())
+                            res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+                        except Exception as e:
+                            print_panel("⚠️ Error", f"Gagal retry dengan jumlah valid: {e}")
+                            continue
 
                 if res and res.get("status", "") == "SUCCESS":
                     successful_purchases.append(f"{variant_name}|{option_order}. {option_name} - {option_price}")
@@ -166,4 +175,3 @@ def purchase_by_family(
         console.print(table)
 
     pause()
-
