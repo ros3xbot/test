@@ -167,7 +167,7 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
     menu_table.add_row("", "")
     menu_table.add_row("9", "🛒 Beli/Buat Paket Bundle")
-    menu_table.add_row("10", "🛒 Beli Semua Paket di Family Code")
+    menu_table.add_row("10", "🛒 Beli Semua Paket dalam Family Code")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     #menu_table.add_row("11", "🐒 XL CIRCLE")
     menu_table.add_row("", "")
@@ -246,7 +246,7 @@ def main():
             case "10":
                 clear_sc()
                 console.print(Panel(
-                    Align.center("🛒 Beli Semua Paket Yang ada di Family Code", vertical="middle"),
+                    Align.center("🛒 Beli Semua Paket Yang ada dalam Family Code", vertical="middle"),
                     border_style=theme["border_info"],
                     padding=(1, 2),
                     expand=True
