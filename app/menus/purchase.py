@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.box import MINIMAL_DOUBLE_HEAD
 from app.client.engsel import get_family, get_package_details
 from app.menus.util import pause
+from app.menus.util_helper import clear_screen
 from app.service.auth import AuthInstance
 from app.type_dict import PaymentItem
 from app.client.balance import settlement_balance
@@ -20,6 +21,7 @@ def purchase_by_family(
     pause_on_success: bool = True,
     token_confirmation_idx: int = 0,
 ):
+    clear_screen()
     api_key = AuthInstance.api_key
     tokens: dict = AuthInstance.get_active_tokens() or {}
 
