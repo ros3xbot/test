@@ -263,11 +263,15 @@ def main():
                 pause_input = console.input(f"[{theme['text_sub']}]Pause setiap pembelian sukses? (y/n):[/{theme['text_sub']}] ").strip().lower()
                 pause_on_success = pause_input == "y"
 
-                confirm_text = Text()
-                confirm_text.append(f"Family Code: [bold]{family_code}[/]\n", style=theme["text_body"])
-                confirm_text.append(f"Gunakan Decoy: {'Ya' if use_decoy else 'Tidak'}\n", style=theme["text_body"])
-                confirm_text.append(f"Pause per pembelian: {'Ya' if pause_on_success else 'Tidak'}\n", style=theme["text_body"])
-                confirm_text.append("\nLanjutkan pembelian semua paket dalam family code ini?", style=theme["text_sub"])
+                from rich.text import Text
+
+                confirm_text = Text.from_markup(
+                    f"Family Code: [bold]{family_code}[/]\n"
+                    f"Gunakan Decoy: {'Ya' if use_decoy else 'Tidak'}\n"
+                    f"Pause per pembelian: {'Ya' if pause_on_success else 'Tidak'}\n\n"
+                    f"[{theme['text_sub']}]Lanjutkan pembelian semua paket dalam family code ini?[/{theme['text_sub']}]"
+                )
+
 
                 console.print(Panel(confirm_text, title="📦 Konfirmasi", border_style=theme["border_warning"], padding=(1, 2), expand=True))
                 lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan? (y/n):[/{theme['text_sub']}] ").strip().lower()
