@@ -18,7 +18,7 @@ def build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at: d
         "x-signature": x_sig,
         "x-request-id": str(uuid.uuid4()),
         "x-request-at": java_like_timestamp(x_requested_at),
-        "x-version-app": "8.7.0",
+        "x-version-app": "8.8.0",
     }
 
 def post_circle(tokens: dict, path: str, payload: dict, package_code: str, token_payment: str, payment_for: str = "FAMILY_HUB_MEMBER"):
