@@ -46,6 +46,8 @@ def purchase_by_family(
                 decoy_data["is_enterprise"],
                 decoy_data["migration_type"],
             )
+            if not decoy_package_detail or "package_option" not in decoy_package_detail:
+                raise ValueError("Detail decoy tidak valid.")
             threshold = decoy_package_detail["package_option"]["price"]
             print_panel("⚠️ Konfirmasi", f"Pastikan sisa balance KURANG DARI Rp{threshold} sebelum lanjut.")
             confirm = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian? (y/n):[/{theme['text_sub']}] ").strip().lower()
@@ -97,6 +99,8 @@ def purchase_by_family(
                     None,
                     None,
                 )
+                if not target_package_detail or "package_option" not in target_package_detail:
+                    raise ValueError("Detail paket tidak ditemukan.")
             except Exception as e:
                 print_panel("⚠️ Error", f"Gagal mengambil detail paket: {e}")
                 continue
@@ -124,7 +128,7 @@ def purchase_by_family(
                     )
                 )
 
-            overwrite_amount = sum(item["item_price"] for item in payment_items)
+            overwrite_amount = sum(item.item_price for item in payment_items)
 
             try:
                 res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
