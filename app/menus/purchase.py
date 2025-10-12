@@ -11,6 +11,8 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.align import Align
 
+console = Console()
+
 def purchase_by_family(
     family_code: str,
     use_decoy: bool,
