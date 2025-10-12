@@ -24,7 +24,7 @@ console = Console()
 def print_banner():
     theme = get_theme()
     banner_text = Align.center(
-        "[bold]myXL CLI v8.7.0 gen_2.1[/]",
+        "[bold]myXL CLI v8.8.0 gen.1[/]",
         vertical="middle"
     )
     console.print(Panel(
@@ -35,6 +35,13 @@ def print_banner():
         expand=True
     ))
     show_simple_number_panel()
+
+def clear_sc():
+    print("Clearing screen...")
+    os.system('cls' if os.name == 'nt' else 'clear')
+    if ascii_art:
+        ascii_art.to_terminal(columns=55)
+    print_banner()
 
 def clear_screen():
     print("Clearing screen...")
@@ -86,7 +93,7 @@ def display_html(html_text, width=80):
 
 def print_banner():
     theme = get_theme()
-    banner_text = Align.center("[bold]myXL CLI v8.7.0 gen_2.1[/]", vertical="middle")
+    banner_text = Align.center("[bold]myXL CLI v8.8.0 gen_2.1[/]", vertical="middle")
     console.print(Panel(banner_text, border_style=theme["border_primary"], style=theme["text_title"], padding=(1, 2), expand=True))
     show_simple_number_panel()
 
