@@ -203,14 +203,14 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         pause()
                         return "BACK"
 
-                    payment_items.append(PaymentItem(
-                        item_code=package_option["package_option_code"],
-                        product_type="",
-                        item_price=package_option["price"],
-                        item_name=package_option["name"],
-                        tax=0,
-                        token_confirmation=decoy_package_detail["token_confirmation"],
-                    ))
+                    payment_items = [{
+                        "item_code": package_option["package_option_code"],
+                        "product_type": "",
+                        "item_price": package_option["price"],
+                        "item_name": package_option["name"],
+                        "tax": 0,
+                        "token_confirmation": decoy_package_detail["token_confirmation"]
+                    }]
 
                     overwrite_amount = int(price) + int(package_option["price"])
 
@@ -261,13 +261,13 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         if not retry_until_success:
                             return "BACK"
                         else:
-                            payment_items.pop()
                             continue
 
                 except Exception as e:
                     print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
                     pause()
                     return "BACK"
+
 
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
