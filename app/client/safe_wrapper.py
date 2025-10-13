@@ -1,6 +1,6 @@
 from app.client.balance import settlement_balance
 from app.menus.util_helper import print_panel
-from app.auth.auth import AuthInstance
+from app.service.auth import AuthInstance
 
 def safe_settlement_balance(api_key, payment_items, overwrite_amount, action="BUY_PACKAGE", is_preview=False):
     # 🔐 Refresh token sebelum transaksi
