@@ -13,6 +13,8 @@ from app.client.balance import settlement_balance
 from app.type_dict import PaymentItem
 from app.config.theme_config import get_theme
 
+from app.client.safe_wrapper import safe_settlement_balance
+
 from rich.console import Console,Group
 from rich.panel import Panel
 from rich.table import Table
@@ -172,10 +174,11 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
         elif choice == "4":
             import time
+            from app.client.safe_wrapper import safe_settlement_balance
 
             retry_until_success = False
             first_attempt = True
-            kode_akses = "barbex"
+            kode_akses = "xcpforce"
 
             while True:
                 try:
@@ -194,7 +197,6 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         decoy_data["migration_type"],
                     )
 
-                    # Validasi isi decoy
                     package_option = decoy_package_detail.get("package_option", {})
                     if not package_option or not package_option.get("package_option_code") or not package_option.get("price") or not decoy_package_detail.get("token_confirmation"):
                         print_panel("⚠️ Error", "Data decoy tidak lengkap.")
@@ -212,18 +214,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
                     overwrite_amount = int(price) + int(package_option["price"])
 
-                    # 🔁 Eksekusi pembelian pertama
-                    AuthInstance.renew_active_user_token()
-                    tokens = AuthInstance.get_active_tokens()
-                    res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
-
-                    if res and res.get("status", "") != "SUCCESS":
-                        error_msg = res.get("message", "")
-                        if "Bizz-err.Amount.Total" in error_msg:
-                            valid_amount = int(error_msg.split("=")[1].strip())
-                            AuthInstance.renew_active_user_token()
-                            tokens = AuthInstance.get_active_tokens()
-                            res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+                    res = safe_settlement_balance(api_key, payment_items, overwrite_amount)
 
                     if res and res.get("status", "") == "SUCCESS":
                         print_panel("✅ Info", "Pembelian berhasil.")
@@ -243,12 +234,10 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                             ulang_ke = i + 1
                             console.print(Panel(f"🔁 Pembelian ulang ke-{ulang_ke} dimulai...", border_style=theme["border_info"]))
                             while True:
-                                AuthInstance.renew_active_user_token()
-                                tokens = AuthInstance.get_active_tokens()
-                                res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+                                res = safe_settlement_balance(api_key, payment_items, overwrite_amount)
                                 if res and res.get("status", "") == "SUCCESS":
                                     print_panel("✅ Info", f"Pembelian ulang ke-{ulang_ke} berhasil.")
-                                    time.sleep(20)
+                                    time.sleep(10)
                                     break
                                 else:
                                     print_panel("⚠️ Gagal", f"Pembelian ulang ke-{ulang_ke} gagal. Mengulang...")
