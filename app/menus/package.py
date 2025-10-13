@@ -170,43 +170,60 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
             console.input("✅ Silahkan lakukan pembayaran. Tekan Enter untuk kembali.")
             return True
         elif choice == "4":
-            try:
-                response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
-                decoy_data = response.json()
-                decoy_package_detail = get_package_details(
-                    api_key,
-                    tokens,
-                    decoy_data["family_code"],
-                    decoy_data["variant_code"],
-                    decoy_data["order"],
-                    decoy_data["is_enterprise"],
-                    decoy_data["migration_type"],
-                )
-                payment_items.append(PaymentItem(
-                    item_code=decoy_package_detail["package_option"]["package_option_code"],
-                    product_type="",
-                    item_price=decoy_package_detail["package_option"]["price"],
-                    item_name=decoy_package_detail["package_option"]["name"],
-                    tax=0,
-                    token_confirmation=decoy_package_detail["token_confirmation"],
-                ))
-                overwrite_amount = price + decoy_package_detail["package_option"]["price"]
-                res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
-                if res and res.get("status", "") != "SUCCESS":
-                    error_msg = res.get("message", "")
-                    if "Bizz-err.Amount.Total" in error_msg:
-                        valid_amount = int(error_msg.split("=")[1].strip())
-                        res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
-                        if res and res.get("status", "") == "SUCCESS":
-                            print_panel("✅ Info", "Pembelian berhasil dengan jumlah yang disesuaikan.")
-                else:
-                    print_panel("✅ Info", "Pembelian berhasil.")
-                pause()
-                return True
-            except Exception as e:
-                print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
-                pause()
-                return "BACK"
+            while True:
+                try:
+                    response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
+                    if response.status_code != 200:
+                        raise Exception(f"Status code: {response.status_code}")
+                    decoy_data = response.json()
+
+                    decoy_package_detail = get_package_details(
+                        api_key,
+                        tokens,
+                        decoy_data["family_code"],
+                        decoy_data["variant_code"],
+                        decoy_data["order"],
+                        decoy_data["is_enterprise"],
+                        decoy_data["migration_type"],
+                    )
+
+                    # Tambahkan item decoy ke payment_items
+                    payment_items.append(PaymentItem(
+                        item_code=decoy_package_detail["package_option"]["package_option_code"],
+                        product_type="",
+                        item_price=decoy_package_detail["package_option"]["price"],
+                        item_name=decoy_package_detail["package_option"]["name"],
+                        tax=0,
+                        token_confirmation=decoy_package_detail["token_confirmation"],
+                    ))
+
+                    overwrite_amount = price + decoy_package_detail["package_option"]["price"]
+                    res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+
+                    if res and res.get("status", "") != "SUCCESS":
+                        error_msg = res.get("message", "")
+                        if "Bizz-err.Amount.Total" in error_msg:
+                            valid_amount = int(error_msg.split("=")[1].strip())
+                            res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+
+                    if res and res.get("status", "") == "SUCCESS":
+                        print_panel("✅ Info", "Pembelian berhasil.")
+                        pause()
+                        return True
+                    else:
+                        print_panel("⚠️ Gagal", "Pembelian gagal. Ingin mencoba lagi?")
+                        retry = console.input(f"[{theme['text_sub']}]Ulangi sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                        if retry != "y":
+                            return "BACK"
+                        else:
+                            # Hapus item decoy terakhir agar tidak menumpuk
+                            payment_items.pop()
+                            continue
+
+                except Exception as e:
+                    print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
+                    pause()
+                    return "BACK"
 
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
