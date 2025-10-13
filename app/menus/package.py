@@ -169,7 +169,11 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
             show_qris_payment(api_key, tokens, payment_items, payment_for, True)
             console.input("✅ Silahkan lakukan pembayaran. Tekan Enter untuk kembali.")
             return True
+
         elif choice == "4":
+            retry_until_success = False
+            first_attempt = True
+
             while True:
                 try:
                     response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
@@ -211,9 +215,14 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         pause()
                         return True
                     else:
-                        print_panel("⚠️ Gagal", "Pembelian gagal. Ingin mencoba lagi?")
-                        retry = console.input(f"[{theme['text_sub']}]Ulangi sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
-                        if retry != "y":
+                        print_panel("⚠️ Gagal", "Pembelian gagal.")
+
+                        if first_attempt:
+                            retry = console.input(f"[{theme['text_sub']}]Ulangi terus sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                            retry_until_success = retry == "y"
+                            first_attempt = False
+
+                        if not retry_until_success:
                             return "BACK"
                         else:
                             # Hapus item decoy terakhir agar tidak menumpuk
