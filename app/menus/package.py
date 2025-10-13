@@ -338,7 +338,7 @@ def get_packages_by_family(
         nav.add_column(justify="right", style=theme["text_key"], width=6)
         nav.add_column(style=theme["text_body"])
         nav.add_row("00", f"[{theme['text_sub']}]Kembali ke menu sebelumnya[/]")
-        nav.add_row("99", f"[{theme['text_err']}]Kembali ke menu utama[/]")
+        nav.add_row("000", f"[{theme['text_err']}]Kembali ke menu utama[/]")
 
         console.print(Panel(
             nav,
@@ -351,7 +351,7 @@ def get_packages_by_family(
         choice = console.input(f"[{theme['text_sub']}]Pilih paket (nomor):[/{theme['text_sub']}] ").strip()
         if choice == "00":
             return "BACK" if not return_package_detail else None
-        elif choice == "99":
+        elif choice == "000":
             return "MAIN"
 
         elif not choice.isdigit():
