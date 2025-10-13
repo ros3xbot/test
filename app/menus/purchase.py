@@ -29,7 +29,7 @@ def purchase_by_family(
     decoy_data = None
     decoy_package_detail = None
     if use_decoy:
-        url = "https://me.mashu.lol/pg-decoy-xcp.json"
+        url = "https://raw.githubusercontent.com/dratx1/engsel/refs/heads/main/family/pg-decoy-xcp.json"
         response = requests.get(url, timeout=30)
         if response.status_code != 200:
             console.print(Panel("❌ Gagal mengambil data decoy package.", border_style=theme["border_error"]))
