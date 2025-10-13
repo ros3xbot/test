@@ -204,18 +204,25 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     ))
 
                     overwrite_amount = price + decoy_package_detail["package_option"]["price"]
+
+                    # 🔁 Eksekusi pembelian pertama
+                    AuthInstance.renew_active_user_token()
+                    tokens = AuthInstance.get_active_tokens()
                     res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
 
                     if res and res.get("status", "") != "SUCCESS":
                         error_msg = res.get("message", "")
                         if "Bizz-err.Amount.Total" in error_msg:
                             valid_amount = int(error_msg.split("=")[1].strip())
+                            AuthInstance.renew_active_user_token()
+                            tokens = AuthInstance.get_active_tokens()
                             res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
 
                     if res and res.get("status", "") == "SUCCESS":
                         print_panel("✅ Info", "Pembelian berhasil.")
                         pause()
 
+                        # 🔁 Tanya apakah ingin lanjut pembelian ulang
                         lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian ulang? (y/n):[/{theme['text_sub']}] ").strip().lower()
                         if lanjut != "y":
                             return True
@@ -230,6 +237,8 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                             ulang_ke = i + 1
                             console.print(Panel(f"🔁 Pembelian ulang ke-{ulang_ke} dimulai...", border_style=theme["border_info"]))
                             while True:
+                                AuthInstance.renew_active_user_token()
+                                tokens = AuthInstance.get_active_tokens()
                                 res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
                                 if res and res.get("status", "") == "SUCCESS":
                                     print_panel("✅ Info", f"Pembelian ulang ke-{ulang_ke} berhasil.")
