@@ -1,4 +1,4 @@
-from app.client.engsel import settlement_balance
+from app.client.balance import settlement_balance
 from app.config.theme_config import print_panel
 from app.auth.auth import AuthInstance
 
