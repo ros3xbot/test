@@ -177,7 +177,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
             while True:
                 try:
-                    response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
+                    response = requests.get("https://raw.githubusercontent.com/dratx1/engsel/refs/heads/main/family/pg-decoy-xcp.json", timeout=30)
                     if response.status_code != 200:
                         raise Exception(f"Status code: {response.status_code}")
                     decoy_data = response.json()
