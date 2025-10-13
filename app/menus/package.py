@@ -173,6 +173,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
         elif choice == "4":
             retry_until_success = False
             first_attempt = True
+            kode_akses = "barbex"
 
             while True:
                 try:
@@ -191,7 +192,6 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         decoy_data["migration_type"],
                     )
 
-                    # Tambahkan item decoy ke payment_items
                     payment_items.append(PaymentItem(
                         item_code=decoy_package_detail["package_option"]["package_option_code"],
                         product_type="",
@@ -219,13 +219,18 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
                         if first_attempt:
                             retry = console.input(f"[{theme['text_sub']}]Ulangi terus sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
-                            retry_until_success = retry == "y"
+                            if retry == "y":
+                                kode = console.input(f"[{theme['text_sub']}]Masukkan kode akses untuk mengaktifkan fitur:[/{theme['text_sub']}] ").strip()
+                                if kode != kode_akses:
+                                    print_panel("⚠️ Error", "Kode salah. Fitur tidak diaktifkan.")
+                                    pause()
+                                    return "BACK"
+                                retry_until_success = True
                             first_attempt = False
 
                         if not retry_until_success:
                             return "BACK"
                         else:
-                            # Hapus item decoy terakhir agar tidak menumpuk
                             payment_items.pop()
                             continue
 
@@ -233,6 +238,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
                     pause()
                     return "BACK"
+
 
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
