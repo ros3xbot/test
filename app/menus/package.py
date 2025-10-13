@@ -127,7 +127,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
     option_table.add_row("1", "💰 Beli dengan Pulsa")
     option_table.add_row("2", "💳 E-Wallet")
     option_table.add_row("3", "📱 QRIS")
-    option_table.add_row("4", "💰 Pulsa + Decoy XCP")
+    option_table.add_row("4", "💰 Pulsa + Decoy")
     if payment_for == "REDEEM_VOUCHER":
         option_table.add_row("5", "🎁 Ambil sebagai bonus")
         option_table.add_row("6", "⭐ Beli dengan Poin")
@@ -213,7 +213,29 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     if res and res.get("status", "") == "SUCCESS":
                         print_panel("✅ Info", "Pembelian berhasil.")
                         pause()
+
+                        # 🔁 Tanya apakah ingin lanjut pembelian ulang
+                        lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian ulang? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                        if lanjut == "y":
+                            try:
+                                jumlah = int(console.input(f"[{theme['text_sub']}]Berapa kali ulang pembelian?:[/{theme['text_sub']}] ").strip())
+                            except:
+                                print_panel("⚠️ Error", "Input jumlah tidak valid.")
+                                return True
+
+                            for i in range(jumlah):
+                                print_panel("⏳ Info", f"Menunggu 10 detik sebelum pembelian ulang ke-{i+1}...")
+                                import time
+                                time.sleep(10)
+
+                                res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+                                if res and res.get("status", "") == "SUCCESS":
+                                    print_panel("✅ Info", f"Pembelian ulang ke-{i+1} berhasil.")
+                                else:
+                                    print_panel("⚠️ Gagal", f"Pembelian ulang ke-{i+1} gagal.")
+                            pause()
                         return True
+
                     else:
                         print_panel("⚠️ Gagal", "Pembelian gagal.")
 
@@ -238,7 +260,6 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
                     pause()
                     return "BACK"
-
 
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
