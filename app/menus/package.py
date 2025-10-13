@@ -179,7 +179,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
 
             while True:
                 try:
-                    response = requests.get("https://raw.githubusercontent.com/dratx1/engsel/refs/heads/main/family/pg-decoy-xcp.json", timeout=30)
+                    response = requests.get("https://me.mashu.lol/pg-decoy-xcp.json", timeout=30)
                     if response.status_code != 200:
                         raise Exception(f"Status code: {response.status_code}")
                     decoy_data = response.json()
@@ -194,16 +194,23 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         decoy_data["migration_type"],
                     )
 
+                    # Validasi isi decoy
+                    package_option = decoy_package_detail.get("package_option", {})
+                    if not package_option or not package_option.get("package_option_code") or not package_option.get("price") or not decoy_package_detail.get("token_confirmation"):
+                        print_panel("⚠️ Error", "Data decoy tidak lengkap.")
+                        pause()
+                        return "BACK"
+
                     payment_items.append(PaymentItem(
-                        item_code=decoy_package_detail["package_option"]["package_option_code"],
+                        item_code=package_option["package_option_code"],
                         product_type="",
-                        item_price=decoy_package_detail["package_option"]["price"],
-                        item_name=decoy_package_detail["package_option"]["name"],
+                        item_price=package_option["price"],
+                        item_name=package_option["name"],
                         tax=0,
                         token_confirmation=decoy_package_detail["token_confirmation"],
                     ))
 
-                    overwrite_amount = price + decoy_package_detail["package_option"]["price"]
+                    overwrite_amount = int(price) + int(package_option["price"])
 
                     # 🔁 Eksekusi pembelian pertama
                     AuthInstance.renew_active_user_token()
@@ -222,7 +229,6 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         print_panel("✅ Info", "Pembelian berhasil.")
                         pause()
 
-                        # 🔁 Tanya apakah ingin lanjut pembelian ulang
                         lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian ulang? (y/n):[/{theme['text_sub']}] ").strip().lower()
                         if lanjut != "y":
                             return True
@@ -250,7 +256,7 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                         return True
 
                     else:
-                        print_panel("⚠️ Gagal", "Pembelian gagal.")
+                        print_panel("⚠️ Gagal", f"Pembelian gagal. Status: {res.get('status')} | Pesan: {res.get('message')}")
 
                         if first_attempt:
                             retry = console.input(f"[{theme['text_sub']}]Ulangi terus sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
@@ -273,7 +279,6 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
                     pause()
                     return "BACK"
-
 
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
