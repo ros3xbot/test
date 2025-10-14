@@ -127,7 +127,8 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
     option_table.add_row("1", "💰 Beli dengan Pulsa")
     option_table.add_row("2", "💳 E-Wallet")
     option_table.add_row("3", "📱 QRIS")
-    option_table.add_row("4", "💰 Pulsa + Decoy")
+    option_table.add_row("4", "💰 Pulsa + Decoy XCP")
+    option_table.add_row("7", "💰 Pulsa + Decoy K-Bersama")
     if payment_for == "REDEEM_VOUCHER":
         option_table.add_row("5", "🎁 Ambil sebagai bonus")
         option_table.add_row("6", "⭐ Beli dengan Poin")
@@ -275,6 +276,112 @@ def show_package_details(api_key, tokens, package_option_code, is_enterprise, op
                     return "BACK"
 
 
+        elif choice == "7":
+            import time
+
+            retry_until_success = False
+            first_attempt = True
+            kode_akses = "barbex"
+
+            while True:
+                try:
+                    response = requests.get("https://raw.githubusercontent.com/dratx1/engsel/refs/heads/main/family/pg-decoy-bersama.json", timeout=30)
+                    if response.status_code != 200:
+                        raise Exception(f"Status code: {response.status_code}")
+                    decoy_data = response.json()
+
+                    decoy_package_detail = get_package_details(
+                        api_key,
+                        tokens,
+                        decoy_data["family_code"],
+                        decoy_data["variant_code"],
+                        decoy_data["order"],
+                        decoy_data["is_enterprise"],
+                        decoy_data["migration_type"],
+                    )
+
+                    payment_items.append(PaymentItem(
+                        item_code=decoy_package_detail["package_option"]["package_option_code"],
+                        product_type="",
+                        item_price=decoy_package_detail["package_option"]["price"],
+                        item_name=decoy_package_detail["package_option"]["name"],
+                        tax=0,
+                        token_confirmation=decoy_package_detail["token_confirmation"],
+                    ))
+
+                    overwrite_amount = price + decoy_package_detail["package_option"]["price"]
+
+                    # 🔁 Eksekusi pembelian pertama
+                    AuthInstance.renew_active_user_token()
+                    tokens = AuthInstance.get_active_tokens()
+                    res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+
+                    if res and res.get("status", "") != "SUCCESS":
+                        error_msg = res.get("message", "")
+                        if "Bizz-err.Amount.Total" in error_msg:
+                            valid_amount = int(error_msg.split("=")[1].strip())
+                            AuthInstance.renew_active_user_token()
+                            tokens = AuthInstance.get_active_tokens()
+                            res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, valid_amount)
+
+                    if res and res.get("status", "") == "SUCCESS":
+                        print_panel("✅ Info", "Pembelian berhasil.")
+                        pause()
+
+                        # 🔁 Tanya apakah ingin lanjut pembelian ulang
+                        lanjut = console.input(f"[{theme['text_sub']}]Lanjutkan pembelian ulang? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                        if lanjut != "y":
+                            return True
+
+                        try:
+                            jumlah = int(console.input(f"[{theme['text_sub']}]Berapa kali ulang pembelian?:[/{theme['text_sub']}] ").strip())
+                        except:
+                            print_panel("⚠️ Error", "Input jumlah tidak valid.")
+                            return True
+
+                        for i in range(jumlah):
+                            ulang_ke = i + 1
+                            console.print(Panel(f"🔁 Pembelian ulang ke-{ulang_ke} dimulai...", border_style=theme["border_info"]))
+                            while True:
+                                AuthInstance.renew_active_user_token()
+                                tokens = AuthInstance.get_active_tokens()
+                                res = settlement_balance(api_key, tokens, payment_items, "BUY_PACKAGE", False, overwrite_amount)
+                                if res and res.get("status", "") == "SUCCESS":
+                                    print_panel("✅ Info", f"Pembelian ulang ke-{ulang_ke} berhasil.")
+                                    time.sleep(20)
+                                    break
+                                else:
+                                    print_panel("⚠️ Gagal", f"Pembelian ulang ke-{ulang_ke} gagal. Mengulang...")
+                        pause()
+                        return True
+
+                    else:
+                        print_panel("⚠️ Gagal", "Pembelian gagal.")
+
+                        if first_attempt:
+                            retry = console.input(f"[{theme['text_sub']}]Ulangi terus sampai berhasil? (y/n):[/{theme['text_sub']}] ").strip().lower()
+                            if retry == "y":
+                                kode = console.input(f"[{theme['text_sub']}]Masukkan kode akses untuk mengaktifkan fitur:[/{theme['text_sub']}] ").strip()
+                                if kode != kode_akses:
+                                    print_panel("⚠️ Error", "Kode salah. Fitur tidak diaktifkan.")
+                                    pause()
+                                    return "BACK"
+                                retry_until_success = True
+                            first_attempt = False
+
+                        if not retry_until_success:
+                            return "BACK"
+                        else:
+                            payment_items.pop()
+                            continue
+
+                except Exception as e:
+                    print_panel("⚠️ Error", f"Gagal melakukan pembelian decoy: {e}")
+                    pause()
+                    return "BACK"
+
+
+        
         elif choice == "5" and payment_for == "REDEEM_VOUCHER":
             settlement_bounty(
                 api_key=api_key,
