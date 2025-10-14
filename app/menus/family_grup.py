@@ -120,7 +120,7 @@ def show_family_menu(return_package_detail: bool = False):
             code = console.input("Masukkan family code: ").strip()
             name = console.input("Masukkan nama family: ").strip()
             success = add_family_code(code, name)
-            print_panel("✅ Info" if success else "❌ Error", "Berhasil menambahkan." if success else "Gagal menambahkan.")
+            print_panel("✅ Info" if success else "❌ Error", "Berhasil menambahkan." if success else "Gagal menambahkan, family code sudah ada di daftar.")
             pause()
 
         elif aksi == "h":
