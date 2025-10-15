@@ -19,7 +19,7 @@ from app.config.theme_config import get_theme
 from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
 from app.menus.bundle import show_bundle_menu
-from app.menus.purchase import purchase_by_family, purchase_loop
+from app.menus.purchase import purchase_by_family
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -167,7 +167,7 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("", "")
     menu_table.add_row("9", "🛒 Beli/Buat Paket Bundle (multi)")
     menu_table.add_row("10", "🛒 Beli Semua Paket dalam Family Code")
-    menu_table.add_row("11", "🔁 Order berulang dari Family Code")
+    #menu_table.add_row("11", "🔁 Order berulang dari Family Code")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     #menu_table.add_row("11", "🐒 XL CIRCLE")
     menu_table.add_row("", "")
