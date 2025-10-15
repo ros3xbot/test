@@ -18,9 +18,8 @@ from app.menus.theme import show_theme_menu
 from app.config.theme_config import get_theme
 from app.menus.points import run_point_exchange
 from app.menus.special import show_special_for_you_menu
-#from app.menus.circle import show_circle_menu
 from app.menus.bundle import show_bundle_menu
-from app.menus.purchase import purchase_by_family
+from app.menus.purchase import purchase_by_family, purchase_loop
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -166,8 +165,9 @@ def show_main_menu(profile, display_quota, segments):
     menu_table.add_row("7", "🔍 Beli Paket Berdasarkan Family Code")
     menu_table.add_row("8", "💾 Simpan/Kelola Family Code")
     menu_table.add_row("", "")
-    menu_table.add_row("9", "🛒 Beli/Buat Paket Bundle")
+    menu_table.add_row("9", "🛒 Beli/Buat Paket Bundle (multi)")
     menu_table.add_row("10", "🛒 Beli Semua Paket dalam Family Code")
+    menu_table.add_row("11", "🔁 Order berulang dari Family Code")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     #menu_table.add_row("11", "🐒 XL CIRCLE")
     menu_table.add_row("", "")
@@ -283,14 +283,19 @@ def main():
 
                 purchase_by_family(family_code, use_decoy, pause_on_success)
 
+            case "9":
+                family_code = input("Masukkan Family Code: ").strip()
+                if family_code != "99":
+                    use_decoy = input("Gunakan decoy? (y/n): ").strip().lower() == 'y'
+                    try:
+                        order = int(input("Urutan dari list Family Code: ").strip())
+                        delay = input("Delay (detik): ").strip()
+                        how_many = int(input("Berapa kali ulang: ").strip())
+                        purchase_loop(how_many, family_code, order, use_decoy, 0 if delay == "" else int(delay))
+                    except ValueError:
+                        print_panel("⚠️ Error", "Input angka tidak valid.")
+                        pause()
 
-            #case "10":
-            #    family_code = input("Enter family code (or '99' to cancel): ")
-            #    if family_code == "99":
-            #        continue
-            #    use_decoy = input("Use decoy package? (y/n): ").lower() == 'y'
-            #    pause_on_success = input("Pause on each successful purchase? (y/n): ").lower() == 'y'
-            #    purchase_by_family(family_code, use_decoy, pause_on_success)
 
             case "00":
                 show_bookmark_menu()
