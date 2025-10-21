@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import app.menus.banner as banner
 ascii_art = banner.load("https://me.mashu.lol/mebanner880.png", globals())
 ascii_art = banner.load("https://d17e22l2uh4h4n.cloudfront.net/corpweb/pub-xlaxiata/2019-03/xl-logo.png", globals())
@@ -16,11 +17,12 @@ from rich import box
 from app.config.theme_config import get_theme
 
 console = Console()
+load_dotenv()
 
 def print_banner():
     theme = get_theme()
     banner_text = Align.center(
-        "[bold]myXL CLI v8.8.0 gen.1[/]",
+        "[bold]myXL CLI v8.8.0 gen.Z[/]",
         vertical="middle"
     )
     console.print(Panel(
@@ -28,7 +30,8 @@ def print_banner():
         border_style=theme["border_primary"],
         style=theme["text_title"],
         padding=(1, 2),
-        expand=True
+        expand=True,
+        box=box.DOUBLE
     ))
 
 def clear_screen():
@@ -39,9 +42,12 @@ def clear_screen():
 
     print_banner()
 
-def print_panel(title, content):
+def print_panel(title, content, border_style=None):
     theme = get_theme()
-    console.print(Panel(content, title=title, title_align="left", style=theme["border_info"]))
+    console = Console()
+    style = border_style or theme["border_info"]
+    console.print(Panel(content, title=title, title_align="left", border_style=style))
+
 
 def print_menu(title, options):
     theme = get_theme()
