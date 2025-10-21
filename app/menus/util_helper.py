@@ -22,7 +22,7 @@ load_dotenv()
 def print_banner():
     theme = get_theme()
     banner_text = Align.center(
-        "[bold]myXL CLI v8.8.0 gen.Z[/]",
+        "[bold]MyXL CLI v8.8.0 gen_2.1[/]",
         vertical="middle"
     )
     console.print(Panel(
