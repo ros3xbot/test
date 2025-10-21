@@ -76,87 +76,126 @@ def main():
     while True:
         active_user = AuthInstance.get_active_user()
 
-        if active_user:
-            balance = get_balance(AuthInstance.api_key, active_user["tokens"]["id_token"])
-            profile_data = get_profile(AuthInstance.api_key, active_user["tokens"]["access_token"], active_user["tokens"]["id_token"])
-
-            tiering_data = {}
-            if profile_data["profile"]["subscription_type"] == "PREPAID":
-                tiering_data = get_tiering_info(AuthInstance.api_key, active_user["tokens"])
-
-            profile = {
-                "number": active_user["number"],
-                "subscriber_id": profile_data["profile"]["subscriber_id"],
-                "subscription_type": profile_data["profile"]["subscription_type"],
-                "balance": balance.get("remaining", 0),
-                "balance_expired_at": balance.get("expired_at", 0),
-                "point_info": f"Points: {tiering_data.get('current_point', 'N/A')} | Tier: {tiering_data.get('tier', 'N/A')}"
-            }
-
-            show_main_menu_rich(profile)
-            choice = input("Pilih menu: ").strip()
-
-            if choice == "1":
-                selected = show_account_menu()
-                if selected: AuthInstance.set_active_user(selected)
-            elif choice == "2":
-                fetch_my_packages()
-            elif choice == "3":
-                show_hot_menu()
-            elif choice == "4":
-                show_hot_menu2()
-            elif choice == "5":
-                option_code = input("Masukkan option code (99 untuk batal): ")
-                if option_code != "99":
-                    show_package_details(AuthInstance.api_key, active_user["tokens"], option_code, False)
-            elif choice == "6":
-                family_code = input("Masukkan family code (99 untuk batal): ")
-                if family_code != "99":
-                    get_packages_by_family(family_code)
-            elif choice == "7":
-                family_code = input("Masukkan family code (99 untuk batal): ")
-                if family_code == "99": continue
-                start = input("Mulai dari option ke (default 1): ")
-                try: start = int(start)
-                except: start = 1
-                use_decoy = input("Gunakan decoy? (y/n): ").lower() == "y"
-                pause_each = input("Pause tiap sukses? (y/n): ").lower() == "y"
-                delay = input("Delay antar pembelian (detik): ")
-                try: delay = int(delay)
-                except: delay = 0
-                purchase_by_family(family_code, use_decoy, pause_each, delay, start)
-            elif choice == "8":
-                show_transaction_history(AuthInstance.api_key, active_user["tokens"])
-            elif choice == "9":
-                show_family_info(AuthInstance.api_key, active_user["tokens"])
-            elif choice == "10":
-                show_circle_info(AuthInstance.api_key, active_user["tokens"])
-            elif choice == "11":
-                execute_unlimited_tiktok_autobuy()
-            elif choice == "00":
-                show_bookmark_menu()
-            elif choice == "66":
-                show_family_menu()
-            elif choice == "77":
-                show_donate_menu()
-            elif choice == "88":
-                show_theme_menu()
-            elif choice == "99":
-                console.print(f"[{theme['text_err']}]Keluar dari aplikasi...[/]")
-                sys.exit(0)
-            elif choice == "t":
-                res = get_package(AuthInstance.api_key, active_user["tokens"], "")
-                print(json.dumps(res, indent=2))
-                input("Tekan Enter untuk lanjut...")
-            elif choice == "s":
-                enter_sentry_mode()
-            else:
-                console.print(f"[{theme['text_err']}]Pilihan tidak valid. Coba lagi.[/]")
-                pause()
-        else:
+        if not active_user:
             selected = show_account_menu()
             if selected:
                 AuthInstance.set_active_user(selected)
+            continue
+
+        # Ambil balance
+        balance = get_balance(AuthInstance.api_key, active_user["tokens"].get("id_token"))
+        if not balance:
+            console.print(f"[{theme['text_err']}]Gagal mengambil data pulsa.[/]")
+            pause()
+            continue
+
+        # Ambil profil
+        profile_data = get_profile(
+            AuthInstance.api_key,
+            active_user["tokens"].get("access_token"),
+            active_user["tokens"].get("id_token")
+        )
+        if not profile_data or "profile" not in profile_data:
+            console.print(f"[{theme['text_err']}]Gagal mengambil profil pengguna.[/]")
+            pause()
+            continue
+
+        sub_type = profile_data["profile"].get("subscription_type", "-")
+        tiering_data = {}
+        if sub_type == "PREPAID":
+            tiering_data = get_tiering_info(AuthInstance.api_key, active_user["tokens"]) or {}
+
+        profile = {
+            "number": active_user.get("number", "-"),
+            "subscriber_id": profile_data["profile"].get("subscriber_id", "-"),
+            "subscription_type": sub_type,
+            "balance": balance.get("remaining", 0),
+            "balance_expired_at": balance.get("expired_at", 0),
+            "point_info": f"Points: {tiering_data.get('current_point', 'N/A')} | Tier: {tiering_data.get('tier', 'N/A')}"
+        }
+
+        show_main_menu_rich(profile)
+        choice = input("Pilih menu: ").strip()
+
+        if choice == "1":
+            selected = show_account_menu()
+            if selected:
+                AuthInstance.set_active_user(selected)
+
+        elif choice == "2":
+            fetch_my_packages()
+
+        elif choice == "3":
+            show_hot_menu()
+
+        elif choice == "4":
+            show_hot_menu2()
+
+        elif choice == "5":
+            option_code = input("Masukkan option code (99 untuk batal): ")
+            if option_code != "99":
+                show_package_details(AuthInstance.api_key, active_user["tokens"], option_code, False)
+
+        elif choice == "6":
+            family_code = input("Masukkan family code (99 untuk batal): ")
+            if family_code != "99":
+                get_packages_by_family(family_code)
+
+        elif choice == "7":
+            family_code = input("Masukkan family code (99 untuk batal): ")
+            if family_code == "99":
+                continue
+            try:
+                start = int(input("Mulai dari option ke (default 1): "))
+            except:
+                start = 1
+            use_decoy = input("Gunakan decoy? (y/n): ").lower() == "y"
+            pause_each = input("Pause tiap sukses? (y/n): ").lower() == "y"
+            try:
+                delay = int(input("Delay antar pembelian (detik): "))
+            except:
+                delay = 0
+            purchase_by_family(family_code, use_decoy, pause_each, delay, start)
+
+        elif choice == "8":
+            show_transaction_history(AuthInstance.api_key, active_user["tokens"])
+
+        elif choice == "9":
+            show_family_info(AuthInstance.api_key, active_user["tokens"])
+
+        elif choice == "10":
+            show_circle_info(AuthInstance.api_key, active_user["tokens"])
+
+        elif choice == "11":
+            execute_unlimited_tiktok_autobuy()
+
+        elif choice == "00":
+            show_bookmark_menu()
+
+        elif choice == "66":
+            show_family_menu()
+
+        elif choice == "77":
+            show_donate_menu()
+
+        elif choice == "88":
+            show_theme_menu()
+
+        elif choice == "99":
+            console.print(f"[{theme['text_err']}]Keluar dari aplikasi...[/]")
+            sys.exit(0)
+
+        elif choice == "t":
+            res = get_package(AuthInstance.api_key, active_user["tokens"], "")
+            print(json.dumps(res, indent=2))
+            input("Tekan Enter untuk lanjut...")
+
+        elif choice == "s":
+            enter_sentry_mode()
+
+        else:
+            console.print(f"[{theme['text_err']}]Pilihan tidak valid. Coba lagi.[/]")
+            pause()
 
 if __name__ == "__main__":
     try:
