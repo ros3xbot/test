@@ -11,7 +11,8 @@ from rich.text import Text
 from rich.align import Align
 from rich.box import MINIMAL_DOUBLE_HEAD
 
-from app.menus.util import clear_screen, pause
+from app.menus.util import pause
+from app.menus.util_helper import clear_screen
 from app.client.engsel import get_balance, get_profile, get_package
 from app.client.engsel2 import get_tiering_info
 from app.menus.payment import show_transaction_history
