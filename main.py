@@ -11,6 +11,7 @@ from rich.text import Text
 from rich.align import Align
 from rich.box import MINIMAL_DOUBLE_HEAD
 
+from app.menus.autobuy import execute_unlimited_tiktok_autobuy
 from app.menus.util import pause
 from app.menus.util_helper import clear_screen, print_panel
 from app.client.engsel import get_balance, get_profile, get_package
@@ -62,6 +63,7 @@ def show_main_menu_rich(profile):
     menu_table.add_row("8", "📜 Riwayat Transaksi")
     menu_table.add_row("9", "👨‍👩‍👧‍👦 Family Plan / Akrab Organizer")
     menu_table.add_row("10", "🧬 Circle [WIP]")
+    menu_table.add_row("11", "🚀 AutoBuy Unlimited Tiktok (QRIS)")
     menu_table.add_row("00", "⭐ Bookmark Paket")
     menu_table.add_row("66", "💾 Simpan/Kelola Family Code")
     menu_table.add_row("77", f"🎁 Donasi & Unlock Code")
@@ -129,6 +131,8 @@ def main():
                 show_family_info(AuthInstance.api_key, active_user["tokens"])
             elif choice == "10":
                 show_circle_info(AuthInstance.api_key, active_user["tokens"])
+            elif choice == "11":
+                execute_unlimited_tiktok_autobuy()
             elif choice == "00":
                 show_bookmark_menu()
             elif choice == "66":
