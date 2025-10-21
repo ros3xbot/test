@@ -8,7 +8,7 @@ from app.service.auth import AuthInstance
 from app.client.ewallet import settlement_multipayment
 from app.client.qris import show_qris_payment
 from app.client.engsel import get_package_details
-from app.service.payment import settlement_balance, settlement_qris
+from app.client.balance import settlement_balance, settlement_qris
 from app.menus.util import pause
 from app.config.theme_config import get_theme
 
