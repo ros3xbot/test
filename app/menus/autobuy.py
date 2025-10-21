@@ -41,7 +41,7 @@ def execute_unlimited_tiktok_autobuy():
             pkg["variant_name"],
             pkg["order"],
             None,
-            silent=True
+            #silent=True
         )
         if not detail:
             console.print(f"[{theme['text_err']}]Gagal mengambil detail untuk paket order {pkg['order']}[/]")
@@ -114,7 +114,7 @@ def execute_unlimited_tiktok_autobuy():
         "For Xtra Combo",
         6,
         None,
-        silent=False
+        #silent=False
     )
 
     if not tiktok:
