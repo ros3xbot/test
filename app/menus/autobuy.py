@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from app.service.auth import AuthInstance
+from app.client.ewallet import settlement_multipayment
 from app.client.qris import show_qris_payment
 from app.client.engsel import get_package_details
 from app.service.payment import settlement_balance, settlement_qris
