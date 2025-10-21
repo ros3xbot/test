@@ -5,9 +5,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from app.service.auth import AuthInstance
-from app.client.engsel import get_qris_code
-from app.client.engsel2 import get_package_details
-from app.service.payment import settlement_balance, settlement_qris_v2
+from app.client.qris import show_qris_payment
+from app.client.engsel import get_package_details
+from app.service.payment import settlement_balance, settlement_qris
 from app.menus.util import pause
 from app.config.theme_config import get_theme
 
@@ -131,7 +131,7 @@ def execute_unlimited_tiktok_autobuy():
     }]
 
     console.print("💳 Memproses pembayaran QRIS...")
-    trx_id = settlement_qris_v2(
+    trx_id = settlement_qris(
         AuthInstance.api_key,
         active_user["tokens"],
         payment_items,
@@ -145,7 +145,7 @@ def execute_unlimited_tiktok_autobuy():
         pause()
         return
 
-    qris_data = get_qris_code(AuthInstance.api_key, active_user["tokens"], trx_id)
+    qris_data = show_qris_payment(AuthInstance.api_key, active_user["tokens"], trx_id)
     if qris_data:
         console.print(Panel("✅ Kode QRIS berhasil dibuat! Silakan scan.", border_style=theme["border_success"]))
         qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=1, border=1)
