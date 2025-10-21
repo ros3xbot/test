@@ -11,8 +11,7 @@ from rich.text import Text
 from rich.align import Align
 from rich.box import MINIMAL_DOUBLE_HEAD
 
-from app.menus.util import pause
-from app.menus.util_helper import clear_screen
+from app.menus.util import clear_screen, pause
 from app.client.engsel import get_balance, get_profile, get_package
 from app.client.engsel2 import get_tiering_info
 from app.menus.payment import show_transaction_history
@@ -25,11 +24,13 @@ from app.service.sentry import enter_sentry_mode
 from app.menus.purchase import purchase_by_family
 from app.menus.famplan import show_family_info
 from app.menus.circle import show_circle_info
+from app.menus.theme import show_theme_menu
+from app.menus.donate import show_donate_menu
+from app.menus.family_grup import show_family_menu
 from app.config.theme_config import get_theme
 
 console = Console()
 theme = get_theme()
-WIDTH = 55
 
 def show_main_menu_rich(profile):
     clear_screen()
@@ -61,6 +62,9 @@ def show_main_menu_rich(profile):
     menu_table.add_row("9", "👨‍👩‍👧‍👦 Family Plan / Akrab Organizer")
     menu_table.add_row("10", "🧬 Circle [WIP]")
     menu_table.add_row("00", "⭐ Bookmark Paket")
+    menu_table.add_row("66", "💾 Simpan/Kelola Family Code")
+    menu_table.add_row("77", f"🎁 Donasi & Unlock Code")
+    menu_table.add_row("88", f"🎨 Ganti Tema CLI")
     menu_table.add_row("99", f"[{theme['text_err']}]⛔ Tutup aplikasi [/]")
 
     console.print(Panel(menu_table, title=f"[{theme['text_title']}]✨ Menu Utama ✨[/]", border_style=theme["border_primary"], padding=(0, 1), expand=True))
@@ -126,6 +130,12 @@ def main():
                 show_circle_info(AuthInstance.api_key, active_user["tokens"])
             elif choice == "00":
                 show_bookmark_menu()
+            elif choice == "66":
+                show_family_menu()
+            elif choice == "77":
+                show_donate_menu()
+            elif choice == "88":
+                show_theme_menu()
             elif choice == "99":
                 console.print(f"[{theme['text_err']}]Keluar dari aplikasi...[/]")
                 sys.exit(0)
