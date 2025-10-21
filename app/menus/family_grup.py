@@ -15,6 +15,7 @@ from app.config.theme_config import get_theme
 console = Console()
 FAMILY_FILE = os.path.abspath("family_codes.json")
 
+
 def ensure_family_file():
     default_data = {"codes": []}
     if not os.path.exists(FAMILY_FILE):
@@ -125,7 +126,7 @@ def show_family_menu(return_package_detail: bool = False):
 
         elif aksi == "h":
             if not semua_kode:
-                print_panel("ℹ️ Info", "Tidak ada kode untuk dihapus.")
+                print_panel("Info", "Tidak ada kode untuk dihapus.")
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin dihapus: ").strip()
@@ -145,7 +146,7 @@ def show_family_menu(return_package_detail: bool = False):
 
         elif aksi == "e":
             if not semua_kode:
-                print_panel("ℹ️ Info", "Tidak ada kode untuk diedit.")
+                print_panel("Info", "Tidak ada kode untuk diedit.")
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin diubah namanya: ").strip()
