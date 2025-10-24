@@ -1,0 +1,150 @@
+import os
+import requests
+import uuid
+import json
+from datetime import datetime, timezone
+from app.client.engsel import send_api_request, BASE_API_URL, API_KEY, UA, java_like_timestamp
+from app.client.encrypt import encryptsign_xdata, decrypt_xdata, get_x_signature_payment
+
+def build_headers(tokens: dict, sig_time_sec: int, x_sig: str, x_requested_at: datetime) -> dict:
+    return {
+        "host": BASE_API_URL.replace("https://", ""),
+        "content-type": "application/json; charset=utf-8",
+        "user-agent": UA,
+        "x-api-key": API_KEY,
+        "authorization": f"Bearer {tokens['id_token']}",
+        "x-hv": "v3",
+        "x-signature-time": str(sig_time_sec),
+        "x-signature": x_sig,
+        "x-request-id": str(uuid.uuid4()),
+        "x-request-at": java_like_timestamp(x_requested_at),
+        "x-version-app": "8.8.0",
+    }
+
+def post_circle(tokens: dict, path: str, payload: dict, package_code: str, token_payment: str, payment_for: str = "FAMILY_HUB_MEMBER"):
+    timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
+    sig_time_sec = timestamp // 1000
+    x_requested_at = datetime.fromtimestamp(sig_time_sec, tz=timezone.utc).astimezone()
+
+    x_sig = get_x_signature_payment(
+        api_key=API_KEY,
+        access_token=tokens["access_token"],
+        sig_time_sec=sig_time_sec,
+        package_code=package_code,
+        token_payment=token_payment,
+        payment_method="BALANCE",  # default, bisa disesuaikan
+        payment_for=payment_for,
+        path=path
+    )
+
+    headers = build_headers(tokens, sig_time_sec, x_sig, x_requested_at)
+    url = f"{BASE_API_URL}/{path}"
+    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+
+    try:
+        return decrypt_xdata(API_KEY, resp.json())
+    except Exception:
+        return resp.json()
+
+# ====================
+# XL Circle API Client
+# ====================
+
+def validate_member(tokens: dict, msisdn: str):
+    path = "family-hub/api/v8/members/validate"
+    payload = {
+        "lang": "id",
+        "is_enterprise": False,
+        "msisdn": msisdn
+    }
+    return post_circle(tokens, path, payload, package_code=msisdn, token_payment="validate")
+
+def check_group_status(tokens: dict, msisdn: str):
+    return validate_member(tokens, msisdn)
+
+def get_group_info(tokens: dict, group_id: str):
+    path = "family-hub/api/v8/members/info"
+    payload = {
+        "lang": "id",
+        "is_enterprise": False,
+        "group_id": group_id
+    }
+    return post_circle(tokens, path, payload, package_code=group_id, token_payment="info")
+
+def get_spending_tracker(tokens: dict, family_id: str, parent_subs_id: str):
+    path = "gamification/api/v8/family-hub/spending-tracker"
+    payload = {
+        "lang": "id",
+        "is_enterprise": False,
+        "family_id": family_id,
+        "parent_subs_id": parent_subs_id
+    }
+    return post_circle(tokens, path, payload, package_code=family_id, token_payment=parent_subs_id)
+
+def get_bonus_list(tokens: dict, family_id: str, parent_subs_id: str):
+    path = "gamification/api/v8/family-hub/bonus/list"
+    payload = {
+        "lang": "id",
+        "is_enterprise": False,
+        "family_id": family_id,
+        "parent_subs_id": parent_subs_id
+    }
+    return post_circle(tokens, path, payload, package_code=family_id, token_payment=parent_subs_id)
+
+def get_package_detail_circle(tokens: dict, package_option_code: str):
+    path = "api/v8/xl-stores/options/detail"
+    payload = {
+        "lang": "id",
+        "is_enterprise": False,
+        "family_role_hub": "MEMBER",
+        "is_autobuy": False,
+        "is_migration": False,
+        "is_shareable": False,
+        "is_transaction_routine": False,
+        "is_upsell_pdp": False,
+        "migration_type": "",
+        "package_family_code": "",
+        "package_option_code": package_option_code,
+        "package_variant_code": ""
+    }
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="detail")
+
+def get_addons_circle(tokens: dict, package_option_code: str):
+    path = "api/v8/xl-stores/options/addons-pinky-box"
+    payload = {
+        "is_enterprise": False,
+        "lang": "id",
+        "package_option_code": package_option_code
+    }
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="addons")
+
+def get_intercept_page(tokens: dict, package_option_code: str):
+    path = "misc/api/v8/utility/intercept-page"
+    payload = {
+        "is_enterprise": False,
+        "lang": "id",
+        "package_option_code": package_option_code
+    }
+    return post_circle(tokens, path, payload, package_code=package_option_code, token_payment="intercept")
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import base64
+
+def get_x_signature_payment(
+    api_key: str,
+    access_token: str,
+    sig_time_sec: int,
+    package_code: str,
+    token_payment: str,
+    payment_method: str,
+    payment_for: str,
+    path: str,
+) -> str:
+    key = os.getenv("AES_KEY_ASCII").encode("ascii")  # 16-byte key
+    iv = b"\x00" * 16
+    raw = f"{package_code}|{token_payment}|{payment_method}|{payment_for}|{sig_time_sec}|{path}|{access_token}"
+    pt = pad(raw.encode("utf-8"), AES.block_size)
+    ct = AES.new(key, AES.MODE_CBC, iv).encrypt(pt)
+    return base64.b64encode(ct).decode("ascii")
+

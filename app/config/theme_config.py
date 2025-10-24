@@ -1,8 +1,10 @@
 import json
 import os
 
+# Path ke file konfigurasi tema
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "theme_config.json")
 
+# Kumpulan preset tema CLI
 THEMES = {
     "emerald_glass": {
         "border_primary": "#10B981",
@@ -260,9 +262,6 @@ def get_theme_name():
     global _cached_theme_name
     return _cached_theme_name or get_active_theme_name()
 
-def get_theme_style(key: str, default: str = "red") -> str:
-    theme = get_theme()
-    return theme.get(key, default)
 
 def set_theme(name):
     if name in THEMES:

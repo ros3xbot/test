@@ -8,13 +8,12 @@ from rich.text import Text
 from rich.box import MINIMAL_DOUBLE_HEAD
 
 from app.menus.package import get_packages_by_family
-from app.menus.util import pause
-from app.menus.util_helper import clear_screen, print_panel, live_loading
+from app.menus.util import clear_screen, pause
+from app.menus.util_helper import print_panel, live_loading
 from app.config.theme_config import get_theme
 
 console = Console()
 FAMILY_FILE = os.path.abspath("family_codes.json")
-
 
 def ensure_family_file():
     default_data = {"codes": []}
@@ -126,7 +125,7 @@ def show_family_menu(return_package_detail: bool = False):
 
         elif aksi == "h":
             if not semua_kode:
-                print_panel("Info", "Tidak ada kode untuk dihapus.")
+                print_panel("ℹ️ Info", "Tidak ada kode untuk dihapus.")
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin dihapus: ").strip()
@@ -146,7 +145,7 @@ def show_family_menu(return_package_detail: bool = False):
 
         elif aksi == "e":
             if not semua_kode:
-                print_panel("Info", "Tidak ada kode untuk diedit.")
+                print_panel("ℹ️ Info", "Tidak ada kode untuk diedit.")
                 pause()
                 continue
             idx = console.input("Masukkan nomor kode yang ingin diubah namanya: ").strip()
